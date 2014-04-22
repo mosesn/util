@@ -91,7 +91,7 @@ class U64Spec extends WordSpec with Matchers {
     0x8000000000000000L.u64_/(3) shouldEqual(0x2AAAAAAAAAAAAAAAL)
   }
 
-  "ids" in {
+  "ids" should {
     "survive conversions" in {
       val rng = new Random
 

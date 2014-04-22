@@ -6,7 +6,7 @@ import org.scalatest.{WordSpec, Matchers}
 
 
 class IVarSpec extends WordSpec with Matchers {
-  "IVar" in {
+  "IVar" should {
     val iv = new IVar[Int]
     "invoke gets after value is set" in {
       var value: Option[Int] = None
@@ -73,10 +73,10 @@ class IVarSpec extends WordSpec with Matchers {
       ran shouldBe true
     }
 
-    "merge" in {
+    "merge" should {
       val a, b, c = new IVar[Int]
       val events = new ArrayBuffer[String]
-      "merges waiters" in {
+      "merges waiters" should {
         b.get { v => events += "b(%d)".format(v) }
         a.get { v => events += "a(%d)".format(v) }
         val expected = Seq("a(1)", "b(1)")
@@ -118,7 +118,7 @@ class IVarSpec extends WordSpec with Matchers {
         b() shouldEqual(1)
       }
 
-      "twoway merges" in {
+      "twoway merges" should {
         "succeed when values are equal" in {
           a.set(1)
           b.set(1)
@@ -157,7 +157,7 @@ class IVarSpec extends WordSpec with Matchers {
         i.depth shouldEqual(0)
       }
 
-      "cycles" in {
+      "cycles" should {
         "deals with cycles in the done state" in {
           a.set(1)
           a.isDefined shouldBe true

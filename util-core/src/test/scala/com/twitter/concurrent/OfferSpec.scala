@@ -25,7 +25,7 @@ class SimpleOffer[T](var futures: Stream[Future[Tx[T]]]) extends Offer[T] {
 class OfferSpec extends WordSpec with Matchers with MockitoSugar {
   import Tx.{Commit, Abort}
 
-  "Offer.map" in {
+  "Offer.map" should {
     // mockito can't spy on anonymous classes.
     val tx = mock[Tx[Int]]
     tx.ack() should equal (Future.value(Commit(123)))
@@ -41,7 +41,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.choose" in {
+  "Offer.choose" should {
     val pendingTxs = 0 until 3 map { _ => new Promise[Tx[Int]] }
     val offers = pendingTxs map { tx => spy(new SimpleOffer(tx)) }
     val offer = Offer.choose(offers:_*)
@@ -134,7 +134,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.sync" in {
+  "Offer.sync" should {
     "when Tx.prepare is immediately available" in {
       "when it commits" in {
         val txp = new Promise[Tx[Int]]
@@ -189,7 +189,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.const" in {
+  "Offer.const" should {
     "always provide the same result" in {
       val offer = Offer.const(123)
 
@@ -205,7 +205,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.orElse" in {
+  "Offer.orElse" should {
     "with const orElse" in {
       val txp = new Promise[Tx[Int]]
       val e0 = spy(new SimpleOffer(txp))
@@ -262,7 +262,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.foreach" in {
+  "Offer.foreach" should {
     "synchronize on offers forever" in {
       val b = new Broker[Int]
       var count = 0
@@ -275,7 +275,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Offer.timeout" in {
+  "Offer.timeout" should {
     "be available after timeout (prepare)" in Time.withTimeAt(Time.epoch) { tc =>
       implicit val timer = new MockTimer
       val e = Offer.timeout(10.seconds)
@@ -307,7 +307,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
   }
 
-  "Integration" in {
+  "Integration" should {
     "select across multiple brokers" in {
       val b0 = new Broker[Int]
       val b1 = new Broker[String]

@@ -58,7 +58,7 @@ class BrokerSpec extends WordSpec with Matchers with MockitoSugar {
       r.sync().isDefined shouldBe false
     }
 
-    "interrupts" in {
+    "interrupts" should {
       "removes queued receiver" in {
         val br = new Broker[Int]
         val recvF = br.recv.sync()

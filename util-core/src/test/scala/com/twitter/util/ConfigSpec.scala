@@ -36,7 +36,7 @@ class ConfigSpec extends WordSpec with Matchers with MockitoSugar {
       (bar.y: Int) shouldEqual 45 // use type annotation to force implicit conversion
     }
 
-    "missingValues" in {
+    "missingValues" should {
       class Bar extends Config.Nothing {
         var z = required[Int]
       }

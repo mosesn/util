@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 import Spool.{*::, **::, seqToSpool}
 
 class SpoolSpec extends WordSpec with Matchers {
-  "Empty Spool" in {
+  "Empty Spool" should {
     val s = Spool.empty[Int]
 
     "iterate over all elements" in {
@@ -165,7 +165,7 @@ class SpoolSpec extends WordSpec with Matchers {
     "return with exception on error in callback" in {
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new Exception("sad panda") }
-      intercept {
+      intercept[Exception] {
         Await.result(f)
       }
     }
@@ -227,7 +227,7 @@ class SpoolSpec extends WordSpec with Matchers {
       val f = s foreach { _ => throw new EOFException("sad panda") }
       p() = Return(2 *:: p1)
       intercept[EOFException] {
-      Await.result(f)
+        Await.result(f)
       }
     }
 
@@ -242,9 +242,10 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "deconstruct" in {
-      s match {
-        case fst *:: rest if fst == 1 && !rest.isDefined => assert(true)
-      }
+      assert(s match {
+        case fst *:: rest if fst == 1 && !rest.isDefined => true
+        case _ => false
+      })
     }
 
     "collect" in {
@@ -256,13 +257,15 @@ class SpoolSpec extends WordSpec with Matchers {
       p() = Return(2 *:: p1)
       f.isDefined shouldBe true
       val s1 = Await.result(f)
-      s1 match {
-        case x *:: rest if x == 4 && !rest.isDefined => assert(true)
-      }
+      assert(s1 match {
+        case x *:: rest if x == 4 && !rest.isDefined => true
+        case _ => false
+      })
       p1() = Return(3 *:: p2)
-      s1 match {
-        case x *:: rest if x == 4 && !rest.isDefined => assert(true)
-      }
+      assert(s1 match {
+        case x *:: rest if x == 4 && !rest.isDefined => true
+        case _ => false
+      })
       p2() = Return(4 **:: Spool.empty)
       val s1s = s1.toSeq
       s1s.isDefined shouldBe true

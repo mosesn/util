@@ -5,7 +5,7 @@ import org.scalatest.{WordSpec, Matchers}
 import com.twitter.util.{Promise, Return, Throw, Await}
 
 class SpoolSourceSpec extends WordSpec with Matchers {
-  "SpoolSource" in {
+  "SpoolSource" should {
     val source = new SpoolSource[Int]
 
     "add values to the spool, ignoring values after close" in {

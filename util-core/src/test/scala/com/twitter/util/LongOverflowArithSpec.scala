@@ -76,21 +76,15 @@ class LongOverflowArithSpec extends WordSpec with Matchers {
       intercept[LongOverflowException] {
         LongOverflowArith.mul(Long.MinValue, -3L)
       }
-      intercept[LongOverflowException] {
-        LongOverflowArith.mul(Long.MinValue, 1L)
-      }
+      LongOverflowArith.mul(Long.MinValue, 1L) shouldBe Long.MinValue
       intercept[LongOverflowException] {
         LongOverflowArith.mul(Long.MinValue, -1L)
       }
-      intercept[LongOverflowException] {
-        LongOverflowArith.mul(1L, Long.MinValue)
-      }
+      LongOverflowArith.mul(1L, Long.MinValue) shouldBe Long.MinValue
       intercept[LongOverflowException] {
         LongOverflowArith.mul(-1L, Long.MinValue)
       }
-      intercept[LongOverflowException] {
-        LongOverflowArith.mul(Long.MinValue, 0L)
-      }
+      LongOverflowArith.mul(Long.MinValue, 0L) shouldBe 0L
       intercept[LongOverflowException] {
         LongOverflowArith.mul(Long.MinValue + 1L, 2L)
       }

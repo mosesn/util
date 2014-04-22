@@ -7,7 +7,7 @@ import com.twitter.conversions.time._
 
 class PoolSpec extends WordSpec with Matchers {
   "SimplePool" should  {
-    "with a simple queue of items" in {
+    "with a simple queue of items" should {
       "it reseves items in FIFO order" in {
         val queue = new mutable.Queue[Int] ++ List(1, 2, 3)
         val pool = new SimplePool(queue)
