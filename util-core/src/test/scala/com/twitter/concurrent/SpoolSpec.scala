@@ -2,126 +2,128 @@ package com.twitter.concurrent
 
 import com.twitter.util.{Await, Future, Promise, Return, Throw}
 import java.io.EOFException
-import org.specs.SpecificationWithJUnit
+import org.scalatest.{WordSpec, Matchers}
 import scala.collection.mutable.ArrayBuffer
 
 import Spool.{*::, **::, seqToSpool}
 
-class SpoolSpec extends SpecificationWithJUnit {
-  "Empty Spool" should {
+class SpoolSpec extends WordSpec with Matchers {
+  "Empty Spool" in {
     val s = Spool.empty[Int]
 
     "iterate over all elements" in {
       val xs = new ArrayBuffer[Int]
       s foreach { xs += _ }
-      xs.size must be_==(0)
+      xs.size shouldEqual(0)
     }
 
     "map" in {
-      (s map { _ * 2 } ) must be_==(Spool.empty[Int])
+      (s map { _ * 2 } ) shouldEqual(Spool.empty[Int])
     }
 
     "deconstruct" in {
-      s must beLike {
+      assert(s match {
         case x **:: rest => false
         case _ => true
-      }
+      })
     }
 
     "append via ++"  in {
-      (s ++ Spool.empty[Int]) must be_==(Spool.empty[Int])
-      (Spool.empty[Int] ++ s) must be_==(Spool.empty[Int])
+      (s ++ Spool.empty[Int]) shouldEqual(Spool.empty[Int])
+      (Spool.empty[Int] ++ s) shouldEqual(Spool.empty[Int])
 
       val s2 = s ++ (3 **:: 4 **:: Spool.empty[Int])
-      Await.result(s2.toSeq) must be_==(Seq(3, 4))
+      Await.result(s2.toSeq) shouldEqual(Seq(3, 4))
     }
 
     "append via ++ with Future rhs"  in {
-      Await.result(s ++ Future(Spool.empty[Int])) must be_==(Spool.empty[Int])
-      Await.result(Spool.empty[Int] ++ Future(s)) must be_==(Spool.empty[Int])
+      Await.result(s ++ Future(Spool.empty[Int])) shouldEqual(Spool.empty[Int])
+      Await.result(Spool.empty[Int] ++ Future(s)) shouldEqual(Spool.empty[Int])
 
       val s2 = s ++ Future(3 **:: 4 **:: Spool.empty[Int])
-      Await.result(s2 flatMap (_.toSeq)) must be_==(Seq(3, 4))
+      Await.result(s2 flatMap (_.toSeq)) shouldEqual(Seq(3, 4))
     }
 
     "flatMap" in {
       val f = (x: Int) => Future(x.toString **:: (x * 2).toString **:: Spool.empty)
-      Await.result(s flatMap f) must be_==(Spool.empty[Int])
+      Await.result(s flatMap f) shouldEqual(Spool.empty[Int])
     }
 
     "fold left" in {
       val fold = s.foldLeft(0){(x, y) => x + y}
-      Await.result(fold) must be_==(0)
+      Await.result(fold) shouldEqual(0)
     }
 
     "reduce left" in {
       val fold = s.reduceLeft{(x, y) => x + y}
-      Await.result(fold) must throwAn[UnsupportedOperationException]
+      intercept[UnsupportedOperationException] {
+        Await.result(fold)
+      }
     }
   }
 
-  "Simple resolved Spool" should {
+  "Simple resolved Spool" should  {
     val s = 1 **:: 2 **:: Spool.empty
 
     "iterate over all elements" in {
       val xs = new ArrayBuffer[Int]
       s foreach { xs += _ }
-      xs.toSeq must be_==(Seq(1,2))
+      xs.toSeq shouldEqual(Seq(1,2))
     }
 
     "buffer to a sequence" in {
-      Await.result(s.toSeq) must be_==(Seq(1, 2))
+      Await.result(s.toSeq) shouldEqual(Seq(1, 2))
     }
 
     "map" in {
-      Await.result(s map { _ * 2 } toSeq) must be_==(Seq(2, 4))
+      Await.result(s map { _ * 2 } toSeq) shouldEqual(Seq(2, 4))
     }
 
     "deconstruct" in {
-      s must beLike {
+      assert(s match {
         case x **:: rest =>
-          x must be_==(1)
-          rest must beLike {
+          x shouldEqual(1)
+          rest match {
             case y **:: rest if y == 2 && rest.isEmpty => true
           }
-      }
+      })
     }
 
     "append via ++"  in {
-      Await.result((s ++ Spool.empty[Int]).toSeq) must be_==(Seq(1, 2))
-      Await.result((Spool.empty[Int] ++ s).toSeq) must be_==(Seq(1, 2))
+      Await.result((s ++ Spool.empty[Int]).toSeq) shouldEqual(Seq(1, 2))
+      Await.result((Spool.empty[Int] ++ s).toSeq) shouldEqual(Seq(1, 2))
 
       val s2 = s ++ (3 **:: 4 **:: Spool.empty)
-      Await.result(s2.toSeq) must be_==(Seq(1, 2, 3, 4))
+      Await.result(s2.toSeq) shouldEqual(Seq(1, 2, 3, 4))
     }
 
     "append via ++ with Future rhs"  in {
-      Await.result(s ++ Future(Spool.empty[Int]) flatMap (_.toSeq)) must be_==(Seq(1, 2))
-      Await.result(Spool.empty[Int] ++ Future(s) flatMap (_.toSeq)) must be_==(Seq(1, 2))
+      Await.result(s ++ Future(Spool.empty[Int]) flatMap (_.toSeq)) shouldEqual(Seq(1, 2))
+      Await.result(Spool.empty[Int] ++ Future(s) flatMap (_.toSeq)) shouldEqual(Seq(1, 2))
 
       val s2 = s ++ Future(3 **:: 4 **:: Spool.empty)
-      Await.result(s2 flatMap (_.toSeq)) must be_==(Seq(1, 2, 3, 4))
+      Await.result(s2 flatMap (_.toSeq)) shouldEqual(Seq(1, 2, 3, 4))
     }
 
     "flatMap" in {
       val f = (x: Int) => Future(x.toString **:: (x * 2).toString **:: Spool.empty)
       val s2 = s flatMap f
-      Await.result(s2 flatMap (_.toSeq)) must be_==(Seq("1", "2", "2", "4"))
+      Await.result(s2 flatMap (_.toSeq)) shouldEqual(Seq("1", "2", "2", "4"))
     }
 
     "fold left" in {
       val fold = s.foldLeft(0){(x, y) => x + y}
-      Await.result(fold) must be_==(3)
+      Await.result(fold) shouldEqual(3)
     }
 
     "reduce left" in {
       val fold = s.reduceLeft{(x, y) => x + y}
-      Await.result(fold) must be_==(3)
+      Await.result(fold) shouldEqual(3)
     }
 
     "be roundtrippable through toSeq/toSpool" in {
       val seq = (0 to 10).toSeq
-      Await.result(seq.toSpool.toSeq) must be_==(seq)
+      Await.result(seq.toSpool.toSeq) shouldEqual(seq)
     }
 
     "flatten via flatMap of toSpool" in {
@@ -133,45 +135,51 @@ class SpoolSpec extends SpecificationWithJUnit {
           Future.value(inner.toSpool)
         }
 
-      Await.result(flatSpool.flatMap(_.toSeq)) must be_==(seq.flatten)
+      Await.result(flatSpool.flatMap(_.toSeq)) shouldEqual(seq.flatten)
     }
   }
 
-  "Simple resolved spool with EOFException" should {
+  "Simple resolved spool with EOFException" should  {
     val p = new Promise[Spool[Int]](Throw(new EOFException("sad panda")))
     val s = 1 **:: 2 *:: p
 
     "EOF iteration on EOFException" in {
         val xs = new ArrayBuffer[Option[Int]]
         s foreachElem { xs += _ }
-        xs.toSeq must be_==(Seq(Some(1), Some(2), None))
+        xs.toSeq shouldEqual(Seq(Some(1), Some(2), None))
     }
   }
 
-  "Simple resolved spool with error" should {
+  "Simple resolved spool with error" should  {
     val p = new Promise[Spool[Int]](Throw(new Exception("sad panda")))
     val s = 1 **:: 2 *:: p
 
     "return with exception on error" in {
       val xs = new ArrayBuffer[Option[Int]]
       s foreachElem { xs += _ }
-      Await.result(s.toSeq) must throwA[Exception]
+      intercept[Exception] {
+        Await.result(s.toSeq)
+      }
     }
 
     "return with exception on error in callback" in {
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new Exception("sad panda") }
-      Await.result(f) must throwA[Exception]
+      intercept {
+        Await.result(f)
+      }
     }
 
     "return with exception on EOFException in callback" in {
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new EOFException("sad panda") }
-      Await.result(f) must throwA[EOFException]
+      intercept[EOFException] {
+        Await.result(f)
+      }
     }
   }
 
-  "Simple delayed Spool" should {
+  "Simple delayed Spool" should  {
     val p = new Promise[Spool[Int]]
     val p1 = new Promise[Spool[Int]]
     val p2 = new Promise[Spool[Int]]
@@ -180,56 +188,62 @@ class SpoolSpec extends SpecificationWithJUnit {
     "iterate as results become available" in {
       val xs = new ArrayBuffer[Int]
       s foreach { xs += _ }
-      xs.toSeq must be_==(Seq(1))
+      xs.toSeq shouldEqual(Seq(1))
       p() = Return(2 *:: p1)
-      xs.toSeq must be_==(Seq(1, 2))
+      xs.toSeq shouldEqual(Seq(1, 2))
       p1() = Return(Spool.empty)
-      xs.toSeq must be_==(Seq(1, 2))
+      xs.toSeq shouldEqual(Seq(1, 2))
     }
 
     "EOF iteration on EOFException" in {
       val xs = new ArrayBuffer[Option[Int]]
       s foreachElem { xs += _ }
-      xs.toSeq must be_==(Seq(Some(1)))
+      xs.toSeq shouldEqual(Seq(Some(1)))
       p() = Throw(new EOFException("sad panda"))
-      xs.toSeq must be_==(Seq(Some(1), None))
+      xs.toSeq shouldEqual(Seq(Some(1), None))
     }
 
     "return with exception on error" in {
       val xs = new ArrayBuffer[Option[Int]]
       s foreachElem { xs += _ }
-      xs.toSeq must be_==(Seq(Some(1)))
+      xs.toSeq shouldEqual(Seq(Some(1)))
       p() = Throw(new Exception("sad panda"))
-      Await.result(s.toSeq) must throwA[Exception]
+      intercept[Exception] {
+        Await.result(s.toSeq)
+      }
     }
 
     "return with exception on error in callback" in {
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new Exception("sad panda") }
       p() = Return(2 *:: p1)
-      Await.result(f) must throwA[Exception]
+      intercept[Exception] {
+        Await.result(f)
+      }
     }
 
     "return with exception on EOFException in callback" in {
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new EOFException("sad panda") }
       p() = Return(2 *:: p1)
-      Await.result(f) must throwA[EOFException]
+      intercept[EOFException] {
+      Await.result(f)
+      }
     }
 
     "return a buffered seq when complete" in {
       val f = s.toSeq
-      f.isDefined must beFalse
+      f.isDefined shouldBe false
       p() = Return(2 *:: p1)
-      f.isDefined must beFalse
+      f.isDefined shouldBe false
       p1() = Return(Spool.empty)
-      f.isDefined must beTrue
-      Await.result(f) must be_==(Seq(1,2))
+      f.isDefined shouldBe true
+      Await.result(f) shouldEqual(Seq(1,2))
     }
 
     "deconstruct" in {
-      s must beLike {
-        case fst *:: rest if fst == 1 && !rest.isDefined => true
+      s match {
+        case fst *:: rest if fst == 1 && !rest.isDefined => assert(true)
       }
     }
 
@@ -238,32 +252,32 @@ class SpoolSpec extends SpecificationWithJUnit {
         case x if x % 2 == 0 => x * 2
       }
 
-      f.isDefined must beFalse  // 1 != 2 mod 0
+      f.isDefined shouldBe false  // 1 != 2 mod 0
       p() = Return(2 *:: p1)
-      f.isDefined must beTrue
+      f.isDefined shouldBe true
       val s1 = Await.result(f)
-      s1 must beLike {
-        case x *:: rest if x == 4 && !rest.isDefined => true
+      s1 match {
+        case x *:: rest if x == 4 && !rest.isDefined => assert(true)
       }
       p1() = Return(3 *:: p2)
-      s1 must beLike {
-        case x *:: rest if x == 4 && !rest.isDefined => true
+      s1 match {
+        case x *:: rest if x == 4 && !rest.isDefined => assert(true)
       }
       p2() = Return(4 **:: Spool.empty)
       val s1s = s1.toSeq
-      s1s.isDefined must beTrue
-      Await.result(s1s) must be_==(Seq(4, 8))
+      s1s.isDefined shouldBe true
+      Await.result(s1s) shouldEqual(Seq(4, 8))
     }
 
     "fold left" in {
       val f = s.foldLeft(0){(x, y) => x + y}
 
-      f.isDefined must beFalse
+      f.isDefined shouldBe false
       p() = Return(2 *:: p1)
-      f.isDefined must beFalse
+      f.isDefined shouldBe false
       p1() = Return(Spool.empty)
-      f.isDefined must beTrue
-      Await.result(f) must be_==(3)
+      f.isDefined shouldBe true
+      Await.result(f) shouldEqual(3)
     }
 
     "be lazy" in {
@@ -274,7 +288,7 @@ class SpoolSpec extends SpecificationWithJUnit {
           else
             throw new AssertionError("Should not have produced " + i)
         }
-      mkSpool() must not(throwA[AssertionError])
+      mkSpool()
     }
   }
 }

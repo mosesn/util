@@ -1,10 +1,11 @@
 package com.twitter.concurrent
 
-import org.specs.SpecificationWithJUnit
+
+import org.scalatest.{WordSpec, Matchers}
 import com.twitter.util.{Promise, Return, Throw, Await}
 
-class SpoolSourceSpec extends SpecificationWithJUnit {
-  "SpoolSource" should {
+class SpoolSourceSpec extends WordSpec with Matchers {
+  "SpoolSource" in {
     val source = new SpoolSource[Int]
 
     "add values to the spool, ignoring values after close" in {
@@ -15,7 +16,7 @@ class SpoolSourceSpec extends SpecificationWithJUnit {
       source.close()
       source.offer(4)
       source.offer(5)
-      Await.result(futureSpool flatMap (_.toSeq)) mustEqual Seq(1, 2, 3)
+      Await.result(futureSpool flatMap (_.toSeq)) shouldEqual Seq(1, 2, 3)
     }
 
     "return multiple Future Spools that only see values added later" in {
@@ -27,10 +28,10 @@ class SpoolSourceSpec extends SpecificationWithJUnit {
       source.offer(3)
       val futureSpool4 = source()
       source.close()
-      Await.result(futureSpool1 flatMap (_.toSeq)) mustEqual Seq(1, 2, 3)
-      Await.result(futureSpool2 flatMap (_.toSeq)) mustEqual Seq(2, 3)
-      Await.result(futureSpool3 flatMap (_.toSeq)) mustEqual Seq(3)
-      Await.result(futureSpool4).isEmpty must beTrue
+      Await.result(futureSpool1 flatMap (_.toSeq)) shouldEqual Seq(1, 2, 3)
+      Await.result(futureSpool2 flatMap (_.toSeq)) shouldEqual Seq(2, 3)
+      Await.result(futureSpool3 flatMap (_.toSeq)) shouldEqual Seq(3)
+      Await.result(futureSpool4).isEmpty shouldBe true
     }
 
     "throw exception and close spool when exception is raised" in {
@@ -39,8 +40,10 @@ class SpoolSourceSpec extends SpecificationWithJUnit {
       source.raise(new Exception("sad panda"))
       val futureSpool2 = source()
       source.offer(1)
-      Await.result(futureSpool1 flatMap (_.toSeq)) must throwA[Exception]
-      Await.result(futureSpool2).isEmpty must beTrue
+      intercept[Exception] {
+        Await.result(futureSpool1 flatMap (_.toSeq))
+      }
+      Await.result(futureSpool2).isEmpty shouldBe true
     }
   }
 }

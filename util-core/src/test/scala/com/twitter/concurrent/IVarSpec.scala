@@ -2,26 +2,26 @@ package com.twitter.concurrent
 
 import java.util.concurrent.CountDownLatch
 import scala.collection.mutable.{ArrayBuffer, SynchronizedBuffer}
+import org.scalatest.{WordSpec, Matchers}
 
-import org.specs.SpecificationWithJUnit
 
-class IVarSpec extends SpecificationWithJUnit {
-  "IVar" should {
+class IVarSpec extends WordSpec with Matchers {
+  "IVar" in {
     val iv = new IVar[Int]
     "invoke gets after value is set" in {
       var value: Option[Int] = None
       iv.get { v => value = Some(v) }
-      value must beNone
+      value shouldEqual None
 
-      iv.set(123) must beTrue
-      value must beSome(123)
+      iv.set(123) shouldBe true
+      value shouldEqual Some(123)
     }
 
     "set value once" in {
-      iv.set(123) must beTrue
-      iv() must be_==(123)
-      iv.set(333) must beFalse
-      iv() must be_==(123)
+      iv.set(123) shouldBe true
+      iv() shouldEqual(123)
+      iv.set(333) shouldBe false
+      iv() shouldEqual(123)
     }
 
     "invoke multiple gets" in {
@@ -29,9 +29,9 @@ class IVarSpec extends SpecificationWithJUnit {
       iv.get { _ => count += 1 }
       iv.get { _ => count += 1 }
       iv.set(123)
-      count must be_==(2)
+      count shouldEqual(2)
       iv.get { _ => count += 1 }
-      count must be_==(3)
+      count shouldEqual(3)
     }
 
     "chain properly" in {
@@ -40,7 +40,7 @@ class IVarSpec extends SpecificationWithJUnit {
       iv.chained.get { _ => order += 2 }
       iv.get { _ => order += 1 }
       iv.set(123)
-      order.toSeq must be_==(Seq(1, 2, 3))
+      order.toSeq shouldEqual(Seq(1, 2, 3))
     }
 
     "defer recursive gets (run a schedule)" in {
@@ -53,7 +53,7 @@ class IVarSpec extends SpecificationWithJUnit {
       }
       get(10)
       iv.set(123)
-      order.toSeq must be_==(10 to 0 by -1 toSeq)
+      order.toSeq shouldEqual(10 to 0 by -1 toSeq)
     }
 
     "remove waiters on unget" in {
@@ -62,7 +62,7 @@ class IVarSpec extends SpecificationWithJUnit {
       iv.get(k)
       iv.unget(k)
       iv.set(1)
-      didrun must beFalse
+      didrun shouldBe false
     }
     
     "not remove another waiter on unget" in {
@@ -70,7 +70,7 @@ class IVarSpec extends SpecificationWithJUnit {
       iv.get { _: Int => ran = true }
       iv.unget({_: Int => ()})
       iv.set(1)
-      ran must beTrue
+      ran shouldBe true
     }
 
     "merge" in {
@@ -83,9 +83,9 @@ class IVarSpec extends SpecificationWithJUnit {
         a.merge(b)
         def test(x: IVar[Int], y: IVar[Int]) {
           x.set(1)
-          events must haveTheSameElementsAs(expected)
-          x.isDefined must beTrue
-          y.isDefined must beTrue
+          events should contain theSameElementsAs(expected)
+          x.isDefined shouldBe true
+          y.isDefined shouldBe true
 
         }
         "a <- b" in test(a, b)
@@ -98,48 +98,50 @@ class IVarSpec extends SpecificationWithJUnit {
         b.merge(c)
 
         c.set(1)
-        a.isDefined must beTrue
-        b.isDefined must beTrue
-        a() must be_==(1)
-        b() must be_==(1)
+        a.isDefined shouldBe true
+        b.isDefined shouldBe true
+        a() shouldEqual(1)
+        b() shouldEqual(1)
       }
 
       "inherits an already defined value" in {
         a.set(1)
         b.merge(a)
-        b.isDefined must beTrue
-        b() must be_==(1)
+        b.isDefined shouldBe true
+        b() shouldEqual(1)
       }
 
       "does not fail if already defined" in {
         a.set(1)
         a.merge(b)
-        b.isDefined must beTrue
-        b() must be_==(1)
+        b.isDefined shouldBe true
+        b() shouldEqual(1)
       }
 
       "twoway merges" in {
         "succeed when values are equal" in {
           a.set(1)
           b.set(1)
-          a.merge(b) mustNot throwA[Throwable]
+          a.merge(b)
         }
 
         "succeeed when values aren't equal, retaining values (it's a noop)" in {
           a.set(1)
           b.set(2)
-          a.merge(b) must throwA[IllegalArgumentException]
-          a.poll must beSome(1)
-          b.poll must beSome(2)
+          intercept[IllegalArgumentException] {
+            a.merge(b)
+          }
+          a.poll shouldEqual Some(1)
+          b.poll shouldEqual Some(2)
         }
       }
 
       "is idempotent" in {
         a.merge(b)
         a.merge(b)
-        a.merge(b) mustNot throwA[Throwable]
+        a.merge(b)
         b.set(123)
-        a.isDefined must beTrue
+        a.isDefined shouldBe true
       }
 
       "performs path compression" in {
@@ -151,23 +153,23 @@ class IVarSpec extends SpecificationWithJUnit {
         for (_ <- 0 until 100)
           (new IVar[Int]).merge(i)
 
-        first.depth must be_==(0)
-        i.depth must be_==(0)
+        first.depth shouldEqual(0)
+        i.depth shouldEqual(0)
       }
 
-      "cycles" >> {
+      "cycles" in {
         "deals with cycles in the done state" in {
           a.set(1)
-          a.isDefined must beTrue
+          a.isDefined shouldBe true
           a.merge(a)
-          a() must be_==(1)
+          a() shouldEqual(1)
         }
 
         "deals with shallow cycles in the waiting state" in {
           a.merge(a)
           a.set(1)
-          a.isDefined must beTrue
-          a() must be_==(1)
+          a.isDefined shouldBe true
+          a() shouldEqual(1)
         }
 
         "deals with simple indirect cycles" in {
@@ -175,12 +177,12 @@ class IVarSpec extends SpecificationWithJUnit {
           b.merge(c)
           c.merge(a)
           b.set(1)
-          a.isDefined must beTrue
-          b.isDefined must beTrue
-          c.isDefined must beTrue
-          a() must be_==(1)
-          b() must be_==(1)
-          c() must be_==(1)
+          a.isDefined shouldBe true
+          b.isDefined shouldBe true
+          c.isDefined shouldBe true
+          a() shouldEqual(1)
+          b() shouldEqual(1)
+          c() shouldEqual(1)
         }
       }
     }
@@ -194,7 +196,7 @@ class IVarSpec extends SpecificationWithJUnit {
             a.get { _ =>
               b.set(1)  // this gets delayed
             }
-            b.isDefined must beFalse
+            b.isDefined shouldBe false
             b()
             didit = true
           }
@@ -204,7 +206,7 @@ class IVarSpec extends SpecificationWithJUnit {
       }
       t.start()
       t.join(500/*ms*/)
-      didit must beTrue
+      didit shouldBe true
     }
   }
 }

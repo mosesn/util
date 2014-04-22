@@ -1,13 +1,16 @@
 package com.twitter.zk
 
-import org.specs.SpecificationWithJUnit
-import org.specs.mock.Mockito
+
+import org.scalatest.{WordSpec, Matchers}
+import org.scalatest.mock.MockitoSugar
 import com.twitter.util.Future
 
-class ConnectorSpec extends SpecificationWithJUnit with Mockito {
-  "Connector.RoundRobin" should {
+class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
+  "Connector.RoundRobin" should  {
     "require underlying connections" in {
-      Connector.RoundRobin() must throwAn[Exception]
+      intercept[Exception] {
+        Connector.RoundRobin()
+      }
     }
 
     "dispatch requests across underlying connectors" in {
@@ -16,8 +19,8 @@ class ConnectorSpec extends SpecificationWithJUnit with Mockito {
       val connector = Connector.RoundRobin(connectors: _*)
 
       "apply" in {
-        connectors foreach {
-          _ apply() returns Future.never
+        connectors foreach { x =>
+          (x apply()) should equals (Future.never)
         }
         (1 to 2 * nConnectors) foreach { _ =>
           connector()

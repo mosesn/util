@@ -1,9 +1,9 @@
 package com.twitter.util
 
-import org.specs.SpecificationWithJUnit
 import com.twitter.util._
+import org.scalatest.{WordSpec, Matchers}
 
-class BijectionSpec extends SpecificationWithJUnit {
+class BijectionSpec extends WordSpec with Matchers {
   case class Foo(i: Int)
 
   val fooject = new Bijection[Foo, Int] {
@@ -16,14 +16,14 @@ class BijectionSpec extends SpecificationWithJUnit {
     case _          => "not a foo"
   }
 
-  "Bijection" should {
+  "Bijection" should  {
     "return the original when inverting the inverse" in {
-      fooject.inverse.inverse mustBe fooject
+      assert(fooject.inverse.inverse == fooject)
     }
 
     "can be used for pattern-match" in {
-      isAFoo(2) mustEqual "a foo! Foo(2)"
-      isAFoo(1) mustEqual "not a foo"
+      assert(isAFoo(2) == "a foo! Foo(2)")
+      assert(isAFoo(1) == "not a foo")
     }
   }
 }

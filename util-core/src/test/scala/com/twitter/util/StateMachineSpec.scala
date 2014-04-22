@@ -1,9 +1,9 @@
 package com.twitter.util
 
-import org.specs.SpecificationWithJUnit
+import org.scalatest.{WordSpec, Matchers}
 
-class StateMachineSpec extends SpecificationWithJUnit {
-  "StateMachine" should {
+class StateMachineSpec extends WordSpec with Matchers {
+  "StateMachine" should  {
     val stateMachine = new StateMachine {
       case class State1() extends State
       case class State2() extends State
@@ -18,12 +18,16 @@ class StateMachineSpec extends SpecificationWithJUnit {
     }
 
     "allows transitions that are permitted" in {
-      stateMachine.command1() mustNot throwA[StateMachine.InvalidStateTransition]
+      intercept[StateMachine.InvalidStateTransition] {
+        stateMachine.command1()
+      }
     }
 
     "throws exceptions when a transition is not permitted" in {
-      stateMachine.command1() mustNot throwA[StateMachine.InvalidStateTransition]
-      stateMachine.command1() must throwA[StateMachine.InvalidStateTransition]
+      stateMachine.command1()
+      intercept[StateMachine.InvalidStateTransition] {
+        stateMachine.command1()
+      }
     }
   }
 }

@@ -23,10 +23,11 @@ import scala.collection.mutable
 import com.twitter.conversions.string._
 import com.twitter.conversions.time._
 import com.twitter.util.TempFolder
-import org.specs.SpecificationWithJUnit
-import org.specs.mock.Mockito
+import org.scalatest.{WordSpec, Matchers}
 
-class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder with TestLogging {
+import org.mockito.Mockito._
+
+class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging {
   private var myHandler: Handler = null
   private var log: Logger = null
 
@@ -44,8 +45,8 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
     rv.toList
   }
 
-  "Logger" should {
-    doBefore {
+  "Logger" should  {
+    before {
       Logger.clearHandlers()
       timeFrozenHandler.clear()
       myHandler = new StringHandler(BareFormatter, None)
@@ -55,7 +56,7 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
     }
 
     "provide level name and value maps" in {
-      Logger.levels mustEqual Map(
+      Logger.levels shouldEqual Map(
         Level.ALL.value -> Level.ALL,
         Level.TRACE.value -> Level.TRACE,
         Level.DEBUG.value -> Level.DEBUG,
@@ -65,7 +66,7 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
         Level.CRITICAL.value -> Level.CRITICAL,
         Level.FATAL.value -> Level.FATAL,
         Level.OFF.value -> Level.OFF)
-      Logger.levelNames mustEqual Map(
+      Logger.levelNames shouldEqual Map(
         "ALL" -> Level.ALL,
         "TRACE" -> Level.TRACE,
         "DEBUG" -> Level.DEBUG,
@@ -79,7 +80,7 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
 
     "figure out package names" in {
       val log1 = Logger(getClass)
-      log1.name mustEqual "com.twitter.logging.LoggerSpec"
+      log1.name shouldEqual "com.twitter.logging.LoggerSpec"
     }
 
     "log & trace a message" in {
@@ -93,15 +94,15 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
       myHandler = timeFrozenHandler
       log.addHandler(timeFrozenHandler)
       log.error("error!")
-      parse() mustEqual List("ERR [20080329-05:53:16.722] (root): error!")
+      parse() shouldEqual List("ERR [20080329-05:53:16.722] (root): error!")
     }
 
     "get single-threaded return the same value" in {
       val loggerFirst = Logger.get("getTest")
-      loggerFirst must notBeNull
+      loggerFirst should not be null
 
       val loggerSecond = Logger.get("getTest")
-      loggerSecond must be(loggerFirst)
+      loggerSecond should be(loggerFirst)
     }
 
     "get multi-threaded return the same value" in {
@@ -123,13 +124,13 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
       executorService.shutdown
       // let them rip, and then wait for em to finish
       latch.countDown
-      executorService.awaitTermination(10, TimeUnit.SECONDS) must beTrue
+      executorService.awaitTermination(10, TimeUnit.SECONDS) shouldBe true
 
       // now make sure they are all the same reference
       val expected = futureResults(0).get
       for (i <- 1.until(numThreads)) {
         val result = futureResults(i).get
-        result must be(expected)
+        result should be(expected)
       }
     }
 
@@ -138,15 +139,15 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
       val otherFactories = List(LoggerFactory(node = "", level = Some(Level.INFO)))
       Logger.configure(initialFactories)
 
-      Logger.get("").getLevel mustEqual Level.DEBUG
+      Logger.get("").getLevel shouldEqual Level.DEBUG
       Logger.withLoggers(otherFactories) {
-        Logger.get("").getLevel() mustEqual Level.INFO
+        Logger.get("").getLevel() shouldEqual Level.INFO
       }
-      Logger.get("").getLevel mustEqual Level.DEBUG
+      Logger.get("").getLevel shouldEqual Level.DEBUG
     }
 
     "configure logging" in {
-      doBefore {
+      before {
         Logger.clearHandlers()
       }
 
@@ -168,17 +169,17 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
             ) :: Nil
           ).apply()
 
-          log.getLevel mustEqual Level.DEBUG
-          log.getHandlers().length mustEqual 1
+          log.getLevel shouldEqual Level.DEBUG
+          log.getHandlers().length shouldEqual 1
           val handler = log.getHandlers()(0).asInstanceOf[FileHandler]
-          handler.filename mustEqual folderName + "/test.log"
-          handler.append mustEqual false
-          handler.getLevel mustEqual Level.INFO
+          handler.filename shouldEqual folderName + "/test.log"
+          handler.append shouldEqual false
+          handler.getLevel shouldEqual Level.INFO
           val formatter = handler.formatter
-          formatter.formatPrefix(javalog.Level.WARNING, "10:55", "hello") mustEqual "WARNING 10:55 hello"
-          log.name mustEqual "com.twitter"
-          formatter.truncateAt mustEqual 1024
-          formatter.useFullPackageNames mustEqual true
+          formatter.formatPrefix(javalog.Level.WARNING, "10:55", "hello") shouldEqual "WARNING 10:55 hello"
+          log.name shouldEqual "com.twitter"
+          formatter.truncateAt shouldEqual 1024
+          formatter.useFullPackageNames shouldEqual true
         }
       }
 
@@ -196,13 +197,13 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
             ) :: Nil
           ).apply()
 
-          log.getHandlers.length mustEqual 1
+          log.getHandlers.length shouldEqual 1
           val h = log.getHandlers()(0).asInstanceOf[SyslogHandler]
-          h.dest.asInstanceOf[InetSocketAddress].getHostName mustEqual "example.com"
-          h.dest.asInstanceOf[InetSocketAddress].getPort mustEqual 212
+          h.dest.asInstanceOf[InetSocketAddress].getHostName shouldEqual "example.com"
+          h.dest.asInstanceOf[InetSocketAddress].getPort shouldEqual 212
           val formatter = h.formatter.asInstanceOf[SyslogFormatter]
-          formatter.serverName mustEqual Some("elmo")
-          formatter.priority mustEqual 128
+          formatter.serverName shouldEqual Some("elmo")
+          formatter.priority shouldEqual 128
         }
       }
 
@@ -245,15 +246,15 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
           ) :: Nil
 
           Logger.configure(factories)
-          Logger.get("").getLevel mustEqual Level.INFO
-          Logger.get("w3c").getLevel mustEqual Level.OFF
-          Logger.get("stats").getLevel mustEqual Level.INFO
-          Logger.get("bad_jobs").getLevel mustEqual Level.INFO
-          Logger.get("").getHandlers()(0) must haveClass[ThrottledHandler]
-          Logger.get("").getHandlers()(0).asInstanceOf[ThrottledHandler].handler must haveClass[FileHandler]
-          Logger.get("w3c").getHandlers().size mustEqual 0
-          Logger.get("stats").getHandlers()(0) must haveClass[ScribeHandler]
-          Logger.get("bad_jobs").getHandlers()(0) must haveClass[FileHandler]
+          Logger.get("").getLevel shouldEqual Level.INFO
+          Logger.get("w3c").getLevel shouldEqual Level.OFF
+          Logger.get("stats").getLevel shouldEqual Level.INFO
+          Logger.get("bad_jobs").getLevel shouldEqual Level.INFO
+          Logger.get("").getHandlers()(0) shouldBe a[ThrottledHandler]
+          Logger.get("").getHandlers()(0).asInstanceOf[ThrottledHandler].handler shouldBe a[FileHandler]
+          Logger.get("w3c").getHandlers().size shouldEqual 0
+          Logger.get("stats").getHandlers()(0) shouldBe a[ScribeHandler]
+          Logger.get("bad_jobs").getHandlers()(0) shouldBe a[FileHandler]
         }
       }
     }
@@ -261,7 +262,7 @@ class LoggerSpec extends SpecificationWithJUnit with Mockito with TempFolder wit
     "java logging" in {
       val logger = javalog.Logger.getLogger("")
 
-      doBefore {
+      before {
         traceLogger(Level.INFO)
       }
 
