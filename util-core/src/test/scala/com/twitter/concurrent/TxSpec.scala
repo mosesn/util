@@ -34,32 +34,47 @@ class TxSpec extends WordSpec with Matchers {
     "complain on ack ack" in {
       val (stx, rtx) = Tx.twoParty(123)
       rtx.ack()
-      rtx.ack() should throwA(Tx.AlreadyAckd)
+
+      intercept[Exception] {
+        rtx.ack()
+      } shouldBe Tx.AlreadyAckd
     }
 
     "complain on ack nack" in {
       val (stx, rtx) = Tx.twoParty(123)
       rtx.ack()
-      rtx.nack() should throwA(Tx.AlreadyAckd)
+
+      intercept[Exception] {
+        rtx.nack()
+      } shouldBe Tx.AlreadyAckd
     }
 
     "complain on nack ack" in {
       val (stx, rtx) = Tx.twoParty(123)
       rtx.nack()
-      rtx.ack() should throwA(Tx.AlreadyNackd)
+
+      intercept[Exception] {
+        rtx.ack()
+      } shouldBe Tx.AlreadyNackd
     }
 
     "complain on nack nack" in {
       val (stx, rtx) = Tx.twoParty(123)
       rtx.nack()
-      rtx.nack() should throwA(Tx.AlreadyNackd)
+
+      intercept[Exception] {
+        rtx.nack()
+      } shouldBe Tx.AlreadyNackd
     }
 
     "complain when already done" in {
       val (stx, rtx) = Tx.twoParty(123)
       stx.ack()
       rtx.ack()
-      stx.ack() should throwA(Tx.AlreadyDone)
+
+      intercept[Exception] {
+        stx.ack()
+      } shouldBe Tx.AlreadyDone
     }
   }
 }
