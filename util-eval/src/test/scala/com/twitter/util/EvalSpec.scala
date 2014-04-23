@@ -112,7 +112,7 @@ class EvalSpec extends WordSpec with Matchers {
     }
 
     "check" in {
-      assert((new Eval).check("23") == ())
+      (new Eval).check("23")
       intercept[Eval.CompilerException] {
         (new Eval).check("invalid")
       }

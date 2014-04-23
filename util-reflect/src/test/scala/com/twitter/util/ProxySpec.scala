@@ -210,7 +210,7 @@ class ProxySpec extends WordSpec with Matchers {
   class ReferenceProxyFactory[I <: AnyRef : Manifest](f: (() => AnyRef) => AnyRef) {
     import java.lang.reflect
 
-    protected val interface = implicitly[Manifest[I]].erasure
+    protected val interface = implicitly[Manifest[I]].runtimeClass
 
     private val proxyConstructor = {
       reflect.Proxy

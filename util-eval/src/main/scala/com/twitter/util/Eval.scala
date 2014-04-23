@@ -30,7 +30,7 @@ import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.interpreter.AbstractFileClassLoader
 import scala.tools.nsc.io.{AbstractFile, VirtualDirectory}
 import scala.tools.nsc.reporters.AbstractReporter
-import scala.tools.nsc.util.{BatchSourceFile, Position}
+import scala.reflect.internal.util.{BatchSourceFile, Position}
 import scala.util.matching.Regex
 
 /**

@@ -106,7 +106,7 @@ class SyslogHandler(
       try {
         socket.send(packet)
       } catch {
-        case e =>
+        case e: Throwable =>
           System.err.println(Formatter.formatStackTrace(e, 30).mkString("\n"))
       }
     }

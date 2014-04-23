@@ -11,8 +11,7 @@ class StateMachineSpec extends WordSpec with Matchers {
 
       def command1() {
         transition("command1") {
-          case State1() => "ok"
-            state = State2()
+          case State1() => state = State2()
         }
       }
     }

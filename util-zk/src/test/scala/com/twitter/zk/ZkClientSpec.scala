@@ -301,10 +301,9 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       "with data" in {
         val data = "blah".getBytes
         create(path, data)(Future(path))
-        Await.result(zkClient(path).create(data)) match {
+        assert(Await.result(zkClient(path).create(data)) match {
           case ZNode(p) => p == path
-          case _ => false
-        }
+        })
       }
 
       "error" in {
@@ -367,10 +366,9 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       val path = "/path"
       "ok" in {
         delete(path, version)(Future.Done)
-        Await.result(zkClient(path).delete(version)) match { 
+        assert(Await.result(zkClient(path).delete(version)) match { 
           case ZNode(p) => p == path
-          case _ => false
-        }
+        })
       }
 
       "error" in {
@@ -570,7 +568,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
             }
             case _ => fail("unexpected return value")
           })
-        } catch { case e => fail("unexpected error: %s".format(e)) }
+        } catch { case e: Throwable => fail("unexpected error: %s".format(e)) }
       }
 
       "monitor" in {
@@ -595,7 +593,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
           results foreach { data =>
             update.syncWait().get() shouldEqual data
           }
-        } catch { case e =>
+        } catch { case e: Throwable =>
           fail("unexpected error: %s".format(e))
         }
       }

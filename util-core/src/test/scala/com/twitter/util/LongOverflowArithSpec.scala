@@ -105,7 +105,7 @@ class LongOverflowArithSpec extends WordSpec with Matchers {
         try {
           test(a, b)
         } catch {
-          case x => {
+          case x: Throwable => {
             println(a + " * " + b + " failed")
             throw x
           }
