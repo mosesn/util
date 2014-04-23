@@ -17,7 +17,7 @@ class CommonConnectorSpec extends WordSpec with Matchers with BeforeAndAfter {
   val addresses = new InetSocketAddress("localhost", port) :: Nil
 
   "CommonConnector" should  {
-    "initialize" in {
+    "initialize" should {
       "with addresses" in {
         implicit val pool = FuturePool.immediatePool
         CommonConnector(addresses, timeout) should not be (null)

@@ -37,7 +37,7 @@ class JvmSpec extends WordSpec with Matchers with TestLogging {
       def edenPool = NilJvm.edenPool
     }
 
-    "foreachGc" in {
+    "foreachGc" should {
       "Capture interleaving GCs with different names" in {
         val b = mutable.Buffer[Gc]()
         jvm.executor.schedules shouldBe empty
@@ -99,7 +99,7 @@ class JvmSpec extends WordSpec with Matchers with TestLogging {
       }
     }
 
-    "monitorsGcs" in {
+    "monitorsGcs" should {
       "queries gcs in range, in reverse chronological order" in Time.withCurrentTimeFrozen { tc =>
         val query = jvm.monitorGcs(10.seconds)
         jvm.executor.schedules should have size (1)

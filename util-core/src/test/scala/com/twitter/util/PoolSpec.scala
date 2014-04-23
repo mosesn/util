@@ -22,6 +22,7 @@ class PoolSpec extends WordSpec with Matchers {
       }
     }
 
+    // FIXME changing this from in to should seems to make the test hang
     "with an object factory and a health check" in {
       var count = 0
       val pool = new FactoryPool[Int](4) {

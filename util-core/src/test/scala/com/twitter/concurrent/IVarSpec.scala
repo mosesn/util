@@ -40,7 +40,7 @@ class IVarSpec extends WordSpec with Matchers {
       iv.chained.get { _ => order += 2 }
       iv.get { _ => order += 1 }
       iv.set(123)
-      order.toSeq shouldEqual(Seq(1, 2, 3))
+      order should contain theSameElementsAs Seq(1, 2, 3)
     }
 
     "defer recursive gets (run a schedule)" in {

@@ -7,6 +7,7 @@ import com.twitter.util.{Return, Throw}
 class AsyncQueueSpec extends WordSpec with Matchers {
   "AsyncQueue" should {
     val q = new AsyncQueue[Int]
+    val exc = new Exception("sad panda")
 
     "queue pollers" in {
       val p0 = q.poll()
@@ -54,7 +55,6 @@ class AsyncQueueSpec extends WordSpec with Matchers {
     }
 
     "fail pending and new pollers" in {
-      val exc = new Exception("sad panda")
       val p0 = q.poll()
       val p1 = q.poll()
 
@@ -69,7 +69,6 @@ class AsyncQueueSpec extends WordSpec with Matchers {
     }
 
     "fail doesn't blow up offer" in {
-      val exc = new Exception("sad panda")
       q.fail(exc)
       q.offer(1)
       q.poll().poll shouldEqual Some(Throw(exc))

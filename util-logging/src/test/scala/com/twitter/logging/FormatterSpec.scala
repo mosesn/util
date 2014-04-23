@@ -113,7 +113,7 @@ class FormatterSpec extends WordSpec with Matchers {
         "CRI [20080329-05:53:16.722] whiskey: Something terrible happened th...\n"
     }
 
-    "write stack traces" in {
+    "write stack traces" should {
       object ExceptionLooper {
         def cycle(n: Int) {
           if (n == 0) {

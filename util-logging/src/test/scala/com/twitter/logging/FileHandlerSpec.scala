@@ -114,7 +114,7 @@ class FileHandlerSpec extends WordSpec with Matchers with TempFolder {
     //   }
     // }
 
-    "roll logs on time" in {
+    "roll logs on time" should {
       "hourly" in {
         withTempFolder {
           val handler = FileHandler(

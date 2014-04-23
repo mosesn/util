@@ -70,18 +70,30 @@ trait TimeLikeSpec[T <: TimeLike[T]] extends WordSpec with Matchers {
 
     "Nanoseconds(_) extracts only finite values, in nanoseconds" in {
       for (t <- Seq(Top, Bottom, Undefined))
-        t match { case Nanoseconds(_) => assert(false) }
+        assert(t match {
+          case Nanoseconds(_) => false
+          case _              => true
+        })
 
       for (ns <- Seq(Long.MinValue, -1, 0, 1, Long.MaxValue); t = fromNanoseconds(ns))
-        t match { case Nanoseconds(`ns`) => assert(false) }
+        assert(t match {
+          case Nanoseconds(`ns`) => true
+          case _                 => false
+        })
     }
 
     "Finite(_) extracts only finite values" in {
       for (t <- Seq(Top, Bottom, Undefined))
-        t match { case Finite(_) => assert(false) }
+        assert(t match {
+          case Finite(_) => false
+          case _         => true
+        })
 
       for (ns <- Seq(Long.MinValue, -1, 0, 1, Long.MaxValue); t = fromNanoseconds(ns))
-        t match { case Finite(`t`) => assert(false) }
+        assert(t match {
+          case Finite(`t`) => true
+          case _           => false
+        })
     }
     
     "roundtrip through serialization" in {
