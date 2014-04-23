@@ -14,7 +14,7 @@ import org.scalatest.matchers.MustMatchers
 import org.scalatest.mock.MockitoSugar
 
 @RunWith(classOf[JUnitRunner])
-class ShardCoordinatorSpec extends WordSpec with Matchers with MustMatchers with MockitoSugar {
+class ShardCoordinatorSpec extends WordSpec with Matchers with MockitoSugar {
 
   "ShardCoordinator" should  {
 

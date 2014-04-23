@@ -6,11 +6,12 @@ import com.twitter.util._
 import org.apache.zookeeper._
 import org.apache.zookeeper.data.{ACL, Stat}
 import org.scalatest.{WordSpec, Matchers}
+import org.scalatest.mock.MockitoSugar
 
 import scala.collection.JavaConverters._
 import scala.collection.Set
 
-class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker {
+class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
   Logger.get("").setLevel(Level.FATAL)
 
   val zk = mock[ZooKeeper]
@@ -188,7 +189,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           i += 1
           Future.exception(connectionLoss)
         }.onSuccess { _ =>
-          failure("Unexpected success")
+          fail("Unexpected success")
         }.handle { case e: KeeperException.ConnectionLossException =>
           e shouldBe connectionLoss
           i shouldEqual 4
@@ -212,7 +213,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           i += 1
           throw rex
         }.onSuccess { _ =>
-          failure("Unexpected success")
+          fail("Unexpected success")
         }.handle { case e: RuntimeException =>
           e shouldBe rex
           i shouldEqual 1
@@ -225,7 +226,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           i += 1
           Future.exception(connectionLoss)
         }.onSuccess { _ =>
-          failure("Shouldn't have succeeded")
+          fail("Shouldn't have succeeded")
         }.handle { case e: KeeperException.ConnectionLossException =>
           i shouldEqual 1
         })
@@ -253,7 +254,10 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
       "withRetries" in {
         val transformed = zkClient.withRetries(retries)
         transformed shouldBe a[ZkClient]
-        transformed.retryPolicy should beLike { case RetryPolicy.Basic(r) => (r == retries) }
+        assert(transformed.retryPolicy match {
+          case RetryPolicy.Basic(r) => r == retries
+          case _                    => false
+        })
       }
 
       "withRetryPolicy" in {
@@ -294,7 +298,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
         val data = null
         create(path, data)(Future.exception(new KeeperException.NodeExistsException(path)))
         Await.ready(zkClient(path).create(data) map { _ =>
-          failure("Unexpected success")
+          fail("Unexpected success")
         } handle { case e: KeeperException.NodeExistsException =>
           e.getPath shouldEqual path
         })
@@ -326,7 +330,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             Future.exception(new KeeperException.NodeExistsException(childPath))
           }
           Await.ready(zkClient(path).create(data, child = Some("child")) map { _ =>
-            failure("Unexpected success")
+            fail("Unexpected success")
           } handle { case e: KeeperException.NodeExistsException =>
             e.getPath shouldEqual childPath
           })
@@ -359,7 +363,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
       "error" in {
         delete(path, version)(Future.exception(new KeeperException.NoNodeException(path)))
         Await.ready(zkClient(path).delete(version) map { _ =>
-          failure("Unexpected success")
+          fail("Unexpected success")
         } handle { case e: KeeperException.NoNodeException =>
           e.getPath shouldEqual path
         })
@@ -379,7 +383,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
         "error" in {
           exists(znode.path)(Future.exception(new KeeperException.NoNodeException(znode.path)))
           Await.ready(znode.exists() map { _ =>
-            failure("Unexpected success")
+            fail("Unexpected success")
           } handle { case e: KeeperException.NoNodeException =>
             e.getPath shouldEqual znode.path
           })
@@ -394,7 +398,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             exists shouldEqual result
             update onSuccess {
               case e @ NodeEvent.Deleted(name) => e shouldEqual event
-              case e => failure("Incorrect event: %s".format(e))
+              case e => fail("Incorrect event: %s".format(e))
             }
           }
         })
@@ -434,7 +438,9 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             val offer = znode.exists.monitor()
             offer syncWait() get() shouldEqual result
             offer syncWait() get() shouldEqual result
-            offer syncWait() get() should throwA[KeeperException.NoNodeException]
+            intercept[KeeperException.NoNodeException] {
+              offer syncWait() get()
+            }
             offer.sync().isDefined shouldBe false
           }
 
@@ -472,7 +478,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             Future.exception(new KeeperException.NoChildrenForEphemeralsException(znode.path))
           }
           Await.ready(znode.getChildren() map { _ =>
-            failure("Unexpected success")
+            fail("Unexpected success")
           } handle { case e: KeeperException.NoChildrenForEphemeralsException =>
             e.getPath shouldEqual znode.path
           })
@@ -483,11 +489,11 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
         watchChildren(znode.path)(Future(result))(Future(NodeEvent.ChildrenChanged(znode.path)))
         Await.ready(znode.getChildren.watch().onSuccess { case ZNode.Watch(r, f) =>
           r onSuccess { case ZNode.Children(p, s, c) =>
-            p must_==(result.path)
-            s must_==(result.stat)
+            p shouldBe result.path
+            s shouldBe result.stat
             f onSuccess {
               case NodeEvent.ChildrenChanged(name) => name shouldEqual znode.path
-              case e => failure("Incorrect event: %s".format(e))
+              case e => fail("Incorrect event: %s".format(e))
             }
           }
         })
@@ -527,7 +533,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             Future.exception(new KeeperException.SessionExpiredException)
           }
           Await.ready(znode.getData() map { _ =>
-            failure("Unexpected success")
+            fail("Unexpected success")
           } handle { case e: KeeperException.SessionExpiredException =>
             e.getPath shouldEqual znode.path
           })
@@ -546,12 +552,12 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
               z shouldEqual result
               u onSuccess {
                 case NodeEvent.DataChanged(name) => name shouldEqual znode.path
-                case e => failure("Incorrect event: %s".format(e))
+                case e => fail("Incorrect event: %s".format(e))
               }
             }
-            case _ => failure("unexpected return value")
+            case _ => fail("unexpected return value")
           })
-        } catch { case e => failure("unexpected error: %s".format(e)) }
+        } catch { case e => fail("unexpected error: %s".format(e)) }
       }
 
       "monitor" in {
@@ -577,7 +583,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
             update.syncWait().get() shouldEqual data
           }
         } catch { case e =>
-          failure("unexpected error: %s".format(e))
+          fail("unexpected error: %s".format(e))
         }
       }
     }
@@ -637,7 +643,9 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           ztu.added.map { _.path } shouldEqual e.added.map { _.path }.toSet
           ztu.removed shouldBe empty
         }
-        Await.result(offer.sync(), 1.second) should throwA[TimeoutException]
+        intercept[TimeoutException] {
+          Await.result(offer.sync(), 1.second)
+        }
       }
 
       "ok" in okUpdates { NodeEvent.ChildrenChanged(_) }
@@ -659,7 +667,9 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           ztu.added.map { _.path } shouldEqual e.added.map { _.path }.toSet
           ztu.removed shouldBe empty
         }
-        Await.result(offer.sync(), 1.second) should throwA[TimeoutException]
+        intercept[TimeoutException] {
+          Await.result(offer.sync(), 1.second)
+        }
       }
     }
 
@@ -677,7 +687,9 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
         setData(znode.path, data, version) {
           Future.exception(new KeeperException.SessionExpiredException)
         }
-        Await.result(znode.setData(data, version)) should throwA[KeeperException.SessionExpiredException]
+        intercept[KeeperException.SessionExpiredException] {
+          Await.result(znode.setData(data, version))
+        }
       }
     }
 
@@ -694,7 +706,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
           Future.exception(new KeeperException.SystemErrorException)
         }
         Await.ready(znode.sync() map { _ =>
-          failure("Unexpected success")
+          fail("Unexpected success")
         } handle { case e: KeeperException.SystemErrorException =>
           e.getPath shouldEqual znode.path
         }, 1.second)
@@ -706,7 +718,7 @@ class ZkClientSpec extends WordSpec with Matchers with JMocker with ClassMocker 
     "A live server @ %s".format(connectString) should  {
       val zkClient = ZkClient(connectString, 1.second, 1.minute)
       val znode = zkClient("/")
-      after { zkClient.release() }
+      def after = { zkClient.release() }
       "have 'zookeeper' in '/'" in {
         Await.result(znode.getChildren(), 2.seconds).children.map { _.name }.contains("zookeeper")
       }

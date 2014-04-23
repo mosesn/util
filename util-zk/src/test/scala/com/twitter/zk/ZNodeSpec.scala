@@ -13,7 +13,7 @@ class ZNodeSpec extends WordSpec with Matchers with MockitoSugar {
     val zk = mock[ZkClient]
     def pathTest(path: String, parent: String, name: String) {
       val znode = ZNode(zk, path)
-      path in {
+      path should {
         "parentPath" in { znode.parentPath shouldEqual parent }
         "name"       in { znode.name       shouldEqual name   }
       }

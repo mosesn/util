@@ -17,7 +17,7 @@ import org.scalatest.concurrent.AsyncAssertions
 import org.scalatest.concurrent.Eventually._
 
 @RunWith(classOf[JUnitRunner])
-class ZkAsyncSemaphoreSpec extends WordSpec with Matchers with MustMatchers with MockitoSugar with AsyncAssertions {
+class ZkAsyncSemaphoreSpec extends WordSpec with Matchers with MockitoSugar with AsyncAssertions {
 
   "ZkAsyncSemaphore" should  {
 
