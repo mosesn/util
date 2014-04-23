@@ -167,12 +167,13 @@ class FormatterSpec extends WordSpec with Matchers {
         }
         Formatter.formatStackTrace(exception, 2).map { scrub(_) } shouldEqual List(
           "    at com.twitter.logging.FormatterSpec$$.cycle2(FormatterSpec.scala:NNN)",
-          "    at com.twitter.logging.FormatterSpec$$.apply(FormatterSpec.scala:NNN)",
+          "    at com.twitter.logging.FormatterSpec$$.apply$mcV$sp(FormatterSpec.scala:NNN)",
           "    (...more...)",
           "Caused by java.lang.Exception: Aie!",
           "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
           "    at com.twitter.logging.FormatterSpec$$.cycle(FormatterSpec.scala:NNN)",
           "    (...more...)")
+
       }
     }
   }
