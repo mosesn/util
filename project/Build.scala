@@ -15,6 +15,7 @@ object Util extends Build {
     organization := "com.twitter",
     scalaVersion := "2.10.4",
     crossScalaVersions := Seq("2.10.4", "2.11.0"),
+    incOptions := incOptions.value.withNameHashing(true),
     // Workaround for a scaladoc bug which causes it to choke on
     // empty classpaths.
     unmanagedClasspath in Compile += Attributed.blank(new java.io.File("doesnotexist")),
@@ -109,13 +110,6 @@ object Util extends Build {
     libraryDependencies ++= Seq(
       "com.twitter.common" % "objectsize" % "0.0.7" % "test"
     ),
-    testOptions in Test <<= scalaVersion map {
-      // There seems to be an issue with mockito spies,
-      // specs1, and scala 2.10
-      case "2.10" | "2.10.0" => Seq(Tests.Filter(s => !s.endsWith("MonitorSpec")))
-      case _ => Seq()
-    },
-
     resourceGenerators in Compile <+=
       (resourceManaged in Compile, name, version) map { (dir, name, ver) =>
         val file = dir / "com" / "twitter" / name / "build.properties"
