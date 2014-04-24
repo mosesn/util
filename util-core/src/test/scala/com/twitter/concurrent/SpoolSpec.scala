@@ -180,12 +180,17 @@ class SpoolSpec extends WordSpec with Matchers {
   }
 
   "Simple delayed Spool" should  {
-    val p = new Promise[Spool[Int]]
-    val p1 = new Promise[Spool[Int]]
-    val p2 = new Promise[Spool[Int]]
-    val s = 1 *:: p
+    class SimpleDelayedSpoolHelper {
+      val p = new Promise[Spool[Int]]
+      val p1 = new Promise[Spool[Int]]
+      val p2 = new Promise[Spool[Int]]
+      val s = 1 *:: p
+    }
 
     "iterate as results become available" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val xs = new ArrayBuffer[Int]
       s foreach { xs += _ }
       xs.toSeq shouldEqual(Seq(1))
@@ -196,6 +201,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "EOF iteration on EOFException" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val xs = new ArrayBuffer[Option[Int]]
       s foreachElem { xs += _ }
       xs.toSeq shouldEqual(Seq(Some(1)))
@@ -204,6 +212,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "return with exception on error" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val xs = new ArrayBuffer[Option[Int]]
       s foreachElem { xs += _ }
       xs.toSeq shouldEqual(Seq(Some(1)))
@@ -214,6 +225,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "return with exception on error in callback" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new Exception("sad panda") }
       p() = Return(2 *:: p1)
@@ -223,6 +237,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "return with exception on EOFException in callback" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val xs = new ArrayBuffer[Option[Int]]
       val f = s foreach { _ => throw new EOFException("sad panda") }
       p() = Return(2 *:: p1)
@@ -232,6 +249,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "return a buffered seq when complete" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val f = s.toSeq
       f.isDefined shouldBe false
       p() = Return(2 *:: p1)
@@ -242,6 +262,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "deconstruct" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       assert(s match {
         case fst *:: rest if fst == 1 && !rest.isDefined => true
         case _ => false
@@ -249,6 +272,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "collect" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val f = s collect {
         case x if x % 2 == 0 => x * 2
       }
@@ -273,6 +299,9 @@ class SpoolSpec extends WordSpec with Matchers {
     }
 
     "fold left" in {
+      val h = new SimpleDelayedSpoolHelper
+      import h._
+
       val f = s.foldLeft(0){(x, y) => x + y}
 
       f.isDefined shouldBe false

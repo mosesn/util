@@ -10,8 +10,13 @@ import org.scalatest.mock.MockitoSugar
 
 class ZNodeSpec extends WordSpec with Matchers with MockitoSugar {
   "ZNode" should  {
-    val zk = mock[ZkClient]
+    class ZNodeSpecHelper {
+      val zk = mock[ZkClient]
+    }
     def pathTest(path: String, parent: String, name: String) {
+      val h = new ZNodeSpecHelper
+      import h._
+
       val znode = ZNode(zk, path)
       path should {
         "parentPath" in { znode.parentPath shouldEqual parent }
@@ -24,6 +29,9 @@ class ZNodeSpec extends WordSpec with Matchers with MockitoSugar {
     pathTest("/path", "/", "path")
 
     "hash together" in {
+      val h = new ZNodeSpecHelper
+      import h._
+
       val zs = (0 to 1) map { _ => ZNode(zk, "/some/path") }
       val table = Map(zs(0) -> true)
       table should contain key (zs(0))

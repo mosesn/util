@@ -6,9 +6,14 @@ import com.twitter.util.{Promise, Return, Throw, Await}
 
 class SpoolSourceSpec extends WordSpec with Matchers {
   "SpoolSource" should {
-    val source = new SpoolSource[Int]
+    class SpoolSourceHelper {
+      val source = new SpoolSource[Int]
+    }
 
     "add values to the spool, ignoring values after close" in {
+      val h = new SpoolSourceHelper
+      import h._
+
       val futureSpool = source()
       source.offer(1)
       source.offer(2)
@@ -20,6 +25,9 @@ class SpoolSourceSpec extends WordSpec with Matchers {
     }
 
     "return multiple Future Spools that only see values added later" in {
+      val h = new SpoolSourceHelper
+      import h._
+
       val futureSpool1 = source()
       source.offer(1)
       val futureSpool2 = source()
@@ -35,6 +43,9 @@ class SpoolSourceSpec extends WordSpec with Matchers {
     }
 
     "throw exception and close spool when exception is raised" in {
+      val h = new SpoolSourceHelper
+      import h._
+
       val futureSpool1 = source()
       source.offer(1)
       source.raise(new Exception("sad panda"))

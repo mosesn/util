@@ -15,11 +15,22 @@ class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "dispatch requests across underlying connectors" should {
-      val nConnectors = 3
-      val connectors = 1 to nConnectors map { _ => mock[Connector] }
-      val connector = Connector.RoundRobin(connectors: _*)
+      class ConnectorSpecHelper {
+        def mockConnector = {
+          val connector = mock[Connector]
+          when(connector.apply()).thenReturn(Future.never)
+          when(connector.release()).thenReturn(Future.never)
+          connector
+        }
+        val nConnectors = 3
+        val connectors = 1 to nConnectors map { _ => mockConnector }
+        val connector = Connector.RoundRobin(connectors: _*)
+      }
 
       "apply" in {
+        val h = new ConnectorSpecHelper
+        import h._
+
         connectors foreach {
           _ apply() shouldBe Future.never
         }
@@ -27,11 +38,14 @@ class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
           connector()
         }
         connectors foreach { c =>
-          verify(c, times(2)).apply()
+          verify(c, times(3)).apply()
         }
       }
 
       "release" in {
+        val h = new ConnectorSpecHelper
+        import h._
+
         connectors foreach {
           _ release() shouldBe Future.never
         }
@@ -39,7 +53,7 @@ class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
           connector.release()
         }
         connectors foreach { c =>
-          verify(c, times(2)).release()
+          verify(c, times(3)).release()
         }
       }
     }

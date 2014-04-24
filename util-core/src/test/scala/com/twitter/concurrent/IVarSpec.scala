@@ -7,8 +7,13 @@ import org.scalatest.{WordSpec, Matchers}
 
 class IVarSpec extends WordSpec with Matchers {
   "IVar" should {
-    val iv = new IVar[Int]
+    class IVarHelper {
+      val iv = new IVar[Int]
+    }
     "invoke gets after value is set" in {
+      val h = new IVarHelper
+      import h._
+
       var value: Option[Int] = None
       iv.get { v => value = Some(v) }
       value shouldEqual None
@@ -18,6 +23,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "set value once" in {
+      val h = new IVarHelper
+      import h._
+
       iv.set(123) shouldBe true
       iv() shouldEqual(123)
       iv.set(333) shouldBe false
@@ -25,6 +33,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "invoke multiple gets" in {
+      val h = new IVarHelper
+      import h._
+
       var count = 0
       iv.get { _ => count += 1 }
       iv.get { _ => count += 1 }
@@ -35,6 +46,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "chain properly" in {
+      val h = new IVarHelper
+      import h._
+
       val order = new ArrayBuffer[Int]
       iv.chained.chained.get { _ => order += 3 }
       iv.chained.get { _ => order += 2 }
@@ -44,6 +58,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "defer recursive gets (run a schedule)" in {
+      val h = new IVarHelper
+      import h._
+
       var order = new ArrayBuffer[Int]
       def get(n: Int) {
         iv.get { _ =>
@@ -57,6 +74,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "remove waiters on unget" in {
+      val h = new IVarHelper
+      import h._
+
       var didrun = false
       val k = { _: Int => didrun = true }
       iv.get(k)
@@ -66,6 +86,9 @@ class IVarSpec extends WordSpec with Matchers {
     }
     
     "not remove another waiter on unget" in {
+      val h = new IVarHelper
+      import h._
+
       var ran = false
       iv.get { _: Int => ran = true }
       iv.unget({_: Int => ()})
@@ -74,9 +97,15 @@ class IVarSpec extends WordSpec with Matchers {
     }
 
     "merge" should {
-      val a, b, c = new IVar[Int]
-      val events = new ArrayBuffer[String]
+      class MergeHelper {
+        val a, b, c = new IVar[Int]
+        val events = new ArrayBuffer[String]
+      }
       "merges waiters" should {
+        val h = new MergeHelper
+        import h._
+
+        val a = new IVar[Int]
         b.get { v => events += "b(%d)".format(v) }
         a.get { v => events += "a(%d)".format(v) }
         val expected = Seq("a(1)", "b(1)")
@@ -93,6 +122,10 @@ class IVarSpec extends WordSpec with Matchers {
       }
 
       "works transitively" in {
+        val h = new MergeHelper
+        import h._
+
+        val a = new IVar[Int]
         val c = new IVar[Int]
         a.merge(b)
         b.merge(c)
@@ -105,6 +138,10 @@ class IVarSpec extends WordSpec with Matchers {
       }
 
       "inherits an already defined value" in {
+        val h = new MergeHelper
+        import h._
+
+        val a = new IVar[Int]
         a.set(1)
         b.merge(a)
         b.isDefined shouldBe true
@@ -112,6 +149,10 @@ class IVarSpec extends WordSpec with Matchers {
       }
 
       "does not fail if already defined" in {
+        val h = new MergeHelper
+        import h._
+
+        val a = new IVar[Int]
         a.set(1)
         a.merge(b)
         b.isDefined shouldBe true
@@ -120,12 +161,20 @@ class IVarSpec extends WordSpec with Matchers {
 
       "twoway merges" should {
         "succeed when values are equal" in {
+          val h = new MergeHelper
+          import h._
+
+          val a = new IVar[Int]
           a.set(1)
           b.set(1)
           a.merge(b)
         }
 
         "succeed when values aren't equal, retaining values (it's a noop)" in {
+          val h = new MergeHelper
+          import h._
+
+          val a = new IVar[Int]
           a.set(1)
           b.set(2)
           intercept[IllegalArgumentException] {
@@ -137,6 +186,10 @@ class IVarSpec extends WordSpec with Matchers {
       }
 
       "is idempotent" in {
+        val h = new MergeHelper
+        import h._
+
+        val a = new IVar[Int]
         a.merge(b)
         a.merge(b)
         a.merge(b)
@@ -159,6 +212,7 @@ class IVarSpec extends WordSpec with Matchers {
 
       "cycles" should {
         "deals with cycles in the done state" in {
+          val a = new IVar[Int]
           a.set(1)
           a.isDefined shouldBe true
           a.merge(a)
@@ -166,6 +220,7 @@ class IVarSpec extends WordSpec with Matchers {
         }
 
         "deals with shallow cycles in the waiting state" in {
+          val a = new IVar[Int]
           a.merge(a)
           a.set(1)
           a.isDefined shouldBe true
@@ -173,6 +228,10 @@ class IVarSpec extends WordSpec with Matchers {
         }
 
         "deals with simple indirect cycles" in {
+          val h = new MergeHelper
+          import h._
+
+          val a = new IVar[Int]
           a.merge(b)
           b.merge(c)
           c.merge(a)

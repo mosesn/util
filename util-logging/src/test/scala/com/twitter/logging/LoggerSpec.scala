@@ -28,25 +28,30 @@ import org.scalatest.{WordSpec, Matchers}
 import org.mockito.Mockito._
 
 class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging {
-  private var myHandler: Handler = null
-  private var log: Logger = null
+  class LoggerSpecHelper {
+    var myHandler: Handler = null
+    var log: Logger = null
 
-  val timeFrozenFormatter = new Formatter(timezone = Some("UTC"))
-  val timeFrozenHandler = new StringHandler(timeFrozenFormatter, None) {
-    override def publish(record: javalog.LogRecord) = {
-      record.setMillis(1206769996722L)
-      super.publish(record)
+    val timeFrozenFormatter = new Formatter(timezone = Some("UTC"))
+    val timeFrozenHandler = new StringHandler(timeFrozenFormatter, None) {
+      override def publish(record: javalog.LogRecord) = {
+        record.setMillis(1206769996722L)
+        super.publish(record)
+      }
+    }
+
+    def parse(): List[String] = {
+      val rv = myHandler.asInstanceOf[StringHandler].get.split("\n")
+      myHandler.asInstanceOf[StringHandler].clear()
+      rv.toList
     }
   }
 
-  private def parse(): List[String] = {
-    val rv = myHandler.asInstanceOf[StringHandler].get.split("\n")
-    myHandler.asInstanceOf[StringHandler].clear()
-    rv.toList
-  }
-
   "Logger" should  {
-    def before = {
+    val h = new LoggerSpecHelper
+    import h._
+
+    def before() = {
       Logger.clearHandlers()
       timeFrozenHandler.clear()
       myHandler = new StringHandler(BareFormatter, None)
@@ -79,7 +84,7 @@ class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging
     }
 
     "figure out package names" in {
-      val log1 = Logger(getClass)
+      val log1 = Logger(this.getClass)
       log1.name shouldEqual "com.twitter.logging.LoggerSpec"
     }
 
@@ -90,6 +95,8 @@ class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging
     }
 
     "log a message, with timestamp" in {
+      before()
+
       Logger.clearHandlers()
       myHandler = timeFrozenHandler
       log.addHandler(timeFrozenHandler)
@@ -262,27 +269,31 @@ class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging
     "java logging" should {
       val logger = javalog.Logger.getLogger("")
 
-      def before = {
+      def before() = {
         traceLogger(Level.INFO)
       }
 
       "single arg calls" in {
+        before()
         logger.log(javalog.Level.INFO, "V1={0}", "A")
         mustLog("V1=A")
       }
 
       "varargs calls" in {
+        before()
         logger.log(javalog.Level.INFO, "V1={0}, V2={1}", Array[AnyRef]("A", "B"))
         mustLog("V1=A, V2=B")
       }
 
       "invalid message format" in {
+        before()
         logger.log(javalog.Level.INFO, "V1=%s", "A")
         mustLog("V1=%s") // %s notation is not known in java MessageFormat
       }
 
       // logging in scala uses the %s format and not the Java MessageFormat
       "compare scala logging format" in {
+        before()
         Logger.get("").info("V1{0}=%s","A")
         mustLog("V1{0}=A")
       }

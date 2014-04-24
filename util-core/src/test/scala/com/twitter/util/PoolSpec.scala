@@ -22,15 +22,19 @@ class PoolSpec extends WordSpec with Matchers {
       }
     }
 
-    // FIXME enabling this test seems to make it hang
-    "with an object factory and a health check" ignore {
-      var count = 0
-      val pool = new FactoryPool[Int](4) {
-        def makeItem() = { count += 1; Future(count) }
-        def isHealthy(i: Int) = i % 2 == 0
+    "with an object factory and a health check" should {
+      class PoolSpecHelper {
+        var count = 0
+        val pool = new FactoryPool[Int](4) {
+          def makeItem() = { count += 1; Future(count) }
+          def isHealthy(i: Int) = i % 2 == 0
+        }
       }
 
       "reserve & release" in {
+        val h = new PoolSpecHelper
+        import h._
+
         Await.result(pool.reserve()) shouldEqual 2
         Await.result(pool.reserve()) shouldEqual 4
         Await.result(pool.reserve()) shouldEqual 6
@@ -49,6 +53,9 @@ class PoolSpec extends WordSpec with Matchers {
       }
 
       "reserve & dispose" in {
+        val h = new PoolSpecHelper
+        import h._
+
         Await.result(pool.reserve()) shouldEqual 2
         Await.result(pool.reserve()) shouldEqual 4
         Await.result(pool.reserve()) shouldEqual 6
