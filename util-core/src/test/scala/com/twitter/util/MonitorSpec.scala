@@ -17,20 +17,25 @@ object MonitorSpec {
 class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   import MonitorSpec._
 
-  "Monitor#orElse" in {
-    val m0, m1, m2 = spy(new MockMonitor)
-    Seq(m0, m1, m2) foreach { _.handle(any[Throwable]) should be (true) }
-    val exc = new Exception
-    val m = m0 orElse m1 orElse m2
+  "Monitor#orElse" should {
+    class MonitorOrElseHelper {
+      val m0, m1, m2 = spy(new MockMonitor)
+      Seq(m0, m1, m2) foreach { m => when(m.handle(any[Throwable])).thenReturn(true) }
+      val exc = new Exception
+      val m = m0 orElse m1 orElse m2
+    }
 
     "stop at first successful handle" in {
+      val h = new MonitorOrElseHelper
+      import h._
+
       m.handle(exc) shouldBe true
 
       verify(m0).handle(exc)
       verify(m1, never()).handle(exc)
       verify(m2, never()).handle(exc)
 
-      m0.handle(any[Throwable]) should be (false)
+      when(m0.handle(any[Throwable])).thenReturn(false)
 
       m.handle(exc) shouldBe true
       verify(m0, times(2)).handle(exc)
@@ -39,16 +44,21 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "fail when no nothing got handled" in {
-      Seq(m0, m1, m2) foreach { _.handle(any[Throwable]) shouldBe false }
+      val h = new MonitorOrElseHelper
+      import h._
+
+      Seq(m0, m1, m2) foreach { m => when(m.handle(any[Throwable]))thenReturn(false) }
       m.handle(exc) shouldBe false
       Seq(m0, m1, m2) foreach { m => verify(m).handle(exc) }
     }
 
     "wrap Monitor exceptions and pass them on" in {
+      val h = new MonitorOrElseHelper
+      import h._
+
       val rte = new RuntimeException("really bad news")
-      intercept[RuntimeException] {
-        m0.handle(any[Throwable])
-      }
+      when(m0.handle(any[Throwable])).thenThrow(rte)
+
       m.handle(exc) shouldBe true
       verify(m0).handle(exc)
       verify(m1).handle(MonitorException(exc, rte))
@@ -56,13 +66,20 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   }
 
   "Monitor#andThen" should  {
-    val m0, m1 = spy(new MockMonitor)
-    val m = m0 andThen m1
-    val exc = new Exception
+    class MonitorAndThenHelper {
+      val m0, m1 = spy(new MockMonitor)
+      when(m0.handle(any[Throwable])).thenReturn(true)
+      when(m1.handle(any[Throwable])).thenReturn(true)
+      val m = m0 andThen m1
+      val exc = new Exception
+    }
 
     "run all monitors" in {
-      m0.handle(any[Throwable]) shouldBe true
-      m1.handle(any[Throwable]) shouldBe true
+      val h = new MonitorAndThenHelper
+      import h._
+
+      when(m0.handle(any[Throwable])).thenReturn(true)
+      when(m1.handle(any[Throwable])).thenReturn(true)
 
       m.handle(exc) shouldBe true
       verify(m0).handle(exc)
@@ -70,29 +87,35 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "be succcessful when any underlying monitor is" in {
-      m0.handle(any[Throwable]) shouldBe false
+      val h = new MonitorAndThenHelper
+      import h._
+
+      when(m0.handle(any[Throwable])).thenReturn(false)
       m.handle(exc) shouldBe true
-      m1.handle(any[Throwable]) shouldBe false
+      when(m1.handle(any[Throwable])).thenReturn(false)
       m.handle(exc) shouldBe false
     }
 
     "wrap Monitor exceptions and pass them on" in {
+      val h = new MonitorAndThenHelper
+      import h._
+
       val rte = new RuntimeException("really bad news")
-      intercept[RuntimeException] {
-        m0.handle(any[Throwable])
-      }
+      when(m0.handle(any[Throwable])).thenThrow(rte)
+
       m.handle(exc) shouldBe true
       verify(m0).handle(exc)
       verify(m1).handle(MonitorException(exc, rte))
     }
 
     "fail if both monitors throw" in {
-      intercept[RuntimeException] {
-        m0.handle(any[Throwable])
-      }
-      intercept[RuntimeException] {
-        m1.handle(any[Throwable])
-      }
+      val h = new MonitorAndThenHelper
+      import h._
+
+      val rte = new RuntimeException("really bad news")
+      when(m0.handle(any[Throwable])).thenThrow(rte)
+      when(m1.handle(any[Throwable])).thenThrow(rte)
+
       m.handle(exc) shouldBe false
     }
   }
@@ -101,7 +124,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
     val m = spy(new MockMonitor)
 
     "maintain current monitor" in Monitor.restoring {
-      m.handle(any[Throwable]) shouldBe true
+      when(m.handle(any[Throwable])).thenReturn(true)
       Monitor.set(m)
       Monitor.get shouldBe m
     }
@@ -111,7 +134,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
     val m = spy(new MockMonitor)
 
     "dispatch to current monitor" in Monitor.restoring {
-      m.handle(any[Throwable]) shouldBe true
+      when(m.handle(any[Throwable])).thenReturn(true)
       val exc = new Exception
       Monitor.set(m)
       Monitor.handle(exc)
@@ -130,28 +153,39 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   }
 
   "Monitor.mk" should  {
-    class E1 extends Exception
-    class E2 extends E1
-    class F1 extends Exception
+    class MonitorMkHelper {
+      class E1 extends Exception
+      class E2 extends E1
+      class F1 extends Exception
 
-    var ran = false
-    val m = Monitor.mk {
-      case _: E1 =>
-        ran = true
-        true
+      var ran = false
+      val m = Monitor.mk {
+        case _: E1 =>
+          ran = true
+          true
+      }
     }
 
     "handle E1" in {
+      val h = new MonitorMkHelper
+      import h._
+
       m.handle(new E1) shouldBe true
       ran shouldBe true
     }
 
     "handle E2" in {
+      val h = new MonitorMkHelper
+      import h._
+
       m.handle(new E2) shouldBe true
       ran shouldBe true
     }
 
     "not handle F1" in {
+      val h = new MonitorMkHelper
+      import h._
+
       m.handle(new F1) shouldBe false
       ran shouldBe false
     }
