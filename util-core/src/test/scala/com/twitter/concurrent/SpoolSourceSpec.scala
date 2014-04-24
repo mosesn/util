@@ -19,7 +19,7 @@ class SpoolSourceSpec extends WordSpec with Matchers {
       Await.result(futureSpool flatMap (_.toSeq)) shouldEqual Seq(1, 2, 3)
     }
 
-    "return multiple Future Spools that only see values added later" ignore {
+    "return multiple Future Spools that only see values added later" in {
       val futureSpool1 = source()
       source.offer(1)
       val futureSpool2 = source()
@@ -34,7 +34,7 @@ class SpoolSourceSpec extends WordSpec with Matchers {
       Await.result(futureSpool4).isEmpty shouldBe true
     }
 
-    "throw exception and close spool when exception is raised" ignore {
+    "throw exception and close spool when exception is raised" in {
       val futureSpool1 = source()
       source.offer(1)
       source.raise(new Exception("sad panda"))

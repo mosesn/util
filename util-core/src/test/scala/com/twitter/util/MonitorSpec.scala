@@ -17,7 +17,7 @@ object MonitorSpec {
 class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   import MonitorSpec._
 
-  "Monitor#orElse" ignore {
+  "Monitor#orElse" in {
     val m0, m1, m2 = spy(new MockMonitor)
     Seq(m0, m1, m2) foreach { _.handle(any[Throwable]) should be (true) }
     val exc = new Exception
@@ -60,7 +60,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
     val m = m0 andThen m1
     val exc = new Exception
 
-    "run all monitors" ignore {
+    "run all monitors" in {
       m0.handle(any[Throwable]) shouldBe true
       m1.handle(any[Throwable]) shouldBe true
 
@@ -69,14 +69,14 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
       verify(m1).handle(exc)
     }
 
-    "be succcessful when any underlying monitor is" ignore {
+    "be succcessful when any underlying monitor is" in {
       m0.handle(any[Throwable]) shouldBe false
       m.handle(exc) shouldBe true
       m1.handle(any[Throwable]) shouldBe false
       m.handle(exc) shouldBe false
     }
 
-    "wrap Monitor exceptions and pass them on" ignore {
+    "wrap Monitor exceptions and pass them on" in {
       val rte = new RuntimeException("really bad news")
       intercept[RuntimeException] {
         m0.handle(any[Throwable])
@@ -86,7 +86,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
       verify(m1).handle(MonitorException(exc, rte))
     }
 
-    "fail if both monitors throw" ignore {
+    "fail if both monitors throw" in {
       intercept[RuntimeException] {
         m0.handle(any[Throwable])
       }
@@ -100,7 +100,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   "Monitor.get, Monitor.set()" should  {
     val m = spy(new MockMonitor)
 
-    "maintain current monitor" ignore Monitor.restoring {
+    "maintain current monitor" in Monitor.restoring {
       m.handle(any[Throwable]) shouldBe true
       Monitor.set(m)
       Monitor.get shouldBe m
@@ -110,7 +110,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
   "Monitor.handle" should  {
     val m = spy(new MockMonitor)
 
-    "dispatch to current monitor" ignore Monitor.restoring {
+    "dispatch to current monitor" in Monitor.restoring {
       m.handle(any[Throwable]) shouldBe true
       val exc = new Exception
       Monitor.set(m)
@@ -151,7 +151,7 @@ class MonitorSpec extends WordSpec with Matchers with MockitoSugar {
       ran shouldBe true
     }
 
-    "not handle F1" ignore {
+    "not handle F1" in {
       m.handle(new F1) shouldBe false
       ran shouldBe false
     }

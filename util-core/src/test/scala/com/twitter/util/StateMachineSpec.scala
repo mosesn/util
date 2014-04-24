@@ -16,13 +16,13 @@ class StateMachineSpec extends WordSpec with Matchers {
       }
     }
 
-    "allows transitions that are permitted" ignore {
+    "allows transitions that are permitted" in {
       intercept[StateMachine.InvalidStateTransition] {
         stateMachine.command1()
       }
     }
 
-    "throws exceptions when a transition is not permitted" ignore {
+    "throws exceptions when a transition is not permitted" in {
       stateMachine.command1()
       intercept[StateMachine.InvalidStateTransition] {
         stateMachine.command1()

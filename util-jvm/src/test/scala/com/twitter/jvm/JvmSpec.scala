@@ -70,7 +70,7 @@ class JvmSpec extends WordSpec with Matchers with TestLogging {
         b(3) shouldEqual(gc1.copy(count=1))
       }
 
-      "Complain when sampling rate is too low, every 30 minutes" ignore Time.withCurrentTimeFrozen { tc =>
+      "Complain when sampling rate is too low, every 30 minutes" in Time.withCurrentTimeFrozen { tc =>
         traceLogger(Level.WARNING)
 
         jvm foreachGc { _ => /*ignore*/}
@@ -100,7 +100,7 @@ class JvmSpec extends WordSpec with Matchers with TestLogging {
     }
 
     "monitorsGcs" should {
-      "queries gcs in range, in reverse chronological order" ignore Time.withCurrentTimeFrozen { tc =>
+      "queries gcs in range, in reverse chronological order" in Time.withCurrentTimeFrozen { tc =>
         val query = jvm.monitorGcs(10.seconds)
         jvm.executor.schedules should have size (1)
         val Seq((r, _, _, _)) = jvm.executor.schedules

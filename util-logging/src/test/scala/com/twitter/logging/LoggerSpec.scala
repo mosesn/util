@@ -89,7 +89,7 @@ class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging
       mustLog("duck")
     }
 
-    "log a message, with timestamp" ignore {
+    "log a message, with timestamp" in {
       Logger.clearHandlers()
       myHandler = timeFrozenHandler
       log.addHandler(timeFrozenHandler)
@@ -259,7 +259,7 @@ class LoggerSpec extends WordSpec with Matchers with TempFolder with TestLogging
       }
     }
 
-    "java logging" ignore {
+    "java logging" should {
       val logger = javalog.Logger.getLogger("")
 
       def before = {

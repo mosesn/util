@@ -26,7 +26,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
   import Tx.{Commit, Abort}
 
   "Offer.map" should {
-    "apply f in after Tx.ack()" ignore {
+    "apply f in after Tx.ack()" in {
       // mockito can't spy on anonymous classes.
       val tx = mock[Tx[Int]]
       tx.ack() should equal (Future.value(Commit(123)))
@@ -76,7 +76,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "when a tx is ready after prepare()" should {
-      "select it" ignore {
+      "select it" in {
         val tx = offer.prepare()
         tx.isDefined shouldBe false
         val tx0 = mock[Tx[Int]]
@@ -86,7 +86,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
         }
       }
 
-      "nack losers" ignore {
+      "nack losers" in {
         offer.prepare()
         pendingTxs(0).setValue(mock[Tx[Int]])
         for (i <- Seq(1, 2)) {
@@ -98,7 +98,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "when all txs are ready" ignore {
+    "when all txs are ready" in {
       val txs = for (p <- pendingTxs) yield {
         val tx = mock[Tx[Int]]
         p.setValue(tx)
@@ -136,7 +136,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
 
   "Offer.sync" should {
     "when Tx.prepare is immediately available" should {
-      "when it commits" ignore {
+      "when it commits" in {
         val txp = new Promise[Tx[Int]]
         val offer = spy(new SimpleOffer(txp))
         val tx = mock[Tx[Int]]
@@ -149,7 +149,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
         verify(tx, never()).nack()
       }
 
-      "retry when it aborts" ignore {
+      "retry when it aborts" in {
         val txps = new Promise[Tx[Int]] #:: new Promise[Tx[Int]] #:: Stream.empty
         val offer = spy(new SimpleOffer(txps))
         val badTx = mock[Tx[Int]]
@@ -174,7 +174,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
     }
 
     "when Tx.prepare is delayed" should {
-      "when it commits" ignore {
+      "when it commits" in {
         val tx = mock[Tx[Int]]
         tx.ack() should equal (Future.value(Commit(123)))
         val offer = spy(new SimpleOffer(tx))
@@ -221,7 +221,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
         verify(tx, never()).ack()
       }
 
-      "not prepare orElse event when the result is immediately available" ignore {
+      "not prepare orElse event when the result is immediately available" in {
         val e1 = spy(new SimpleOffer(Stream.empty))
         val offer = e0 orElse e1
         val tx = mock[Tx[Int]]
@@ -240,7 +240,7 @@ class OfferSpec extends WordSpec with Matchers with MockitoSugar {
       val e0 = spy(new SimpleOffer(Future.value(Tx.aborted: Tx[Int]) #:: (tx2: Future[Tx[Int]]) #:: Stream.empty))
       val offer = e0 orElse Offer.const(123)
 
-      "select first again if tx2 is ready" ignore {
+      "select first again if tx2 is ready" in {
         val tx = mock[Tx[Int]]
         tx.ack() should equal (Future.value(Commit(321)))
         tx2.setValue(tx)

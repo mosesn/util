@@ -1,4 +1,4 @@
-package com.twitter.zk
+package com.twitter.zk 
 
 import com.twitter.conversions.time._
 import com.twitter.logging.{Level, Logger}
@@ -295,7 +295,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       znode("to/child").path shouldEqual "/some/path/to/child"
     }
 
-    "create" ignore {
+    "create" should {
       val path = "/root/path/to/a/node"
 
       "with data" in {
@@ -361,7 +361,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "delete" ignore {
+    "delete" should {
       val version = 0
       val path = "/path"
       "ok" in {
@@ -385,7 +385,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       val znode = zkClient("/maybe/exists")
       val result = ZNode.Exists(znode, new Stat)
 
-      "apply" ignore {
+      "apply" should {
         "ok" in {
           exists(znode.path)(Future(result.stat))
           Await.result(znode.exists()) shouldEqual result
@@ -401,7 +401,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         }
       }
 
-      "watch" ignore {
+      "watch" in {
         val event = NodeEvent.Deleted(znode.path)
         watch(znode.path)(Future(result.stat))(Future(event))
         Await.ready(znode.exists.watch() onSuccess { case ZNode.Watch(r, update) =>
@@ -415,7 +415,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         })
       }
 
-      "monitor" ignore {
+      "monitor" in {
         val deleted = NodeEvent.Deleted(znode.path)
         def expectZNodes(n: Int) {
           val results = 0 until n map { _ => ZNode.Exists(znode, new Stat) }
@@ -432,7 +432,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
           expectZNodes(3)
         }
 
-        "handles session events properly" ignore {
+        "handles session events properly" in {
           "AuthFailed" in {
             // this case is somewhat unrealistic
             watch(znode.path)(Future(new Stat))(Future(StateEvent.AuthFailed()))
@@ -478,7 +478,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       val znode = zkClient("/parent")
       val result = ZNode.Children(znode, new Stat, "doe" :: "ray" :: "me" :: Nil)
 
-      "apply" ignore {
+      "apply" should {
         "ok" in {
           getChildren(znode.path)(Future(result))
           Await.result(znode.getChildren()) shouldEqual result
@@ -496,7 +496,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         }
       }
 
-      "watch" ignore {
+      "watch" in {
         watchChildren(znode.path)(Future(result))(Future(NodeEvent.ChildrenChanged(znode.path)))
         Await.ready(znode.getChildren.watch().onSuccess { case ZNode.Watch(r, f) =>
           r onSuccess { case ZNode.Children(p, s, c) =>
@@ -510,7 +510,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         })
       }
 
-      "monitor" ignore {
+      "monitor" in {
         val znode = zkClient("/characters")
         val results = List(
             Seq("Angel", "Buffy", "Giles", "Willow", "Xander"),
@@ -533,7 +533,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       val znode = zkClient("/giles")
       val result = ZNode.Data(znode, new Stat, "good show, indeed".getBytes)
 
-      "apply" ignore {
+      "apply" should {
         "ok" in {
           getData(znode.path)(Future(result))
           Await.result(znode.getData()) shouldEqual result
@@ -551,7 +551,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         }
       }
 
-      "watch" ignore {
+      "watch" in {
         watchData(znode.path) {
           Future(result)
         } {
@@ -571,7 +571,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         } catch { case e: Throwable => fail("unexpected error: %s".format(e)) }
       }
 
-      "monitor" ignore {
+      "monitor" in {
         val results = List(
             "In every generation there is a chosen one.",
             "She alone will stand against the vampires the demons and the forces of darkness.",
@@ -599,7 +599,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "monitorTree" ignore {
+    "monitorTree" should {
       // Lay out a tree of ZNode.Children
       val treeRoot = ZNode.Children(zkClient("/arboreal"), new Stat, 'a' to 'e' map { _.toString })
 
@@ -684,7 +684,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "set data" ignore {
+    "set data" in {
       val znode = zkClient("/empty/node")
       val result = ZNode.Exists(znode, new Stat)
       val data = "word to your mother.".getBytes
@@ -704,7 +704,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "sync" ignore {
+    "sync" in {
       val znode = zkClient("/sync")
 
       "ok" in {

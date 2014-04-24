@@ -7,7 +7,7 @@ import scala.io.Source
 import com.twitter.io.TempFile
 
 class EvalSpec extends WordSpec with Matchers {
-  "Evaluator" ignore {
+  "Evaluator" should {
 
     "apply('expression')" in {
       assert((new Eval).apply[Int]("1 + 1") == 2)

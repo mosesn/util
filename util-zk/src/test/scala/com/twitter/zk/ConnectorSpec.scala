@@ -19,7 +19,7 @@ class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
       val connectors = 1 to nConnectors map { _ => mock[Connector] }
       val connector = Connector.RoundRobin(connectors: _*)
 
-      "apply" ignore {
+      "apply" in {
         connectors foreach {
           _ apply() shouldBe Future.never
         }
@@ -31,7 +31,7 @@ class ConnectorSpec extends WordSpec with Matchers with MockitoSugar {
         }
       }
 
-      "release" ignore {
+      "release" in {
         connectors foreach {
           _ release() shouldBe Future.never
         }
