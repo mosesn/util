@@ -10,6 +10,8 @@ import org.scalatest.mock.MockitoSugar
 import org.mockito._
 import org.mockito.Mockito._
 import org.mockito.Matchers.{eq => meq, _}
+import org.mockito.stubbing.Answer
+import org.mockito.invocation.InvocationOnMock
 
 import scala.collection.JavaConverters._
 import scala.collection.Set
@@ -28,10 +30,13 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
 
   implicit val javaTimer = new JavaTimer(true)
 
+  def answer(res: Unit) = new Answer[Unit] {
+    override def answer(invocation: InvocationOnMock): Unit = res
+  }
+
   /*
    * ZooKeeper expectation wrappers
    */
-
   def create(path: String,
              data: Array[Byte] = "".getBytes,
              acls: Seq[ACL] = zkClient.acl,
@@ -41,7 +46,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
     when(zk.create(meq(path),
         meq(data), meq(acls.asJava),
         meq(mode), cb.capture(),
-        meq(null))) thenReturn {
+        meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       wait onSuccess { newPath =>
         cbValue.processResult(0, path, null, newPath)
@@ -54,7 +59,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
 
   def delete(path: String, version: Int)(wait: => Future[Unit]) {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.VoidCallback])
-    when(zk.delete(meq(path), meq(version), cb.capture(), meq(null))) thenReturn {
+    when(zk.delete(meq(path), meq(version), cb.capture(), meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       wait onSuccess { _ =>
         cbValue.processResult(0, path, null)
@@ -67,7 +72,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
 
   def exists(path: String)(stat: => Future[Stat]) {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.StatCallback])
-    when(zk.exists(meq(path), meq(false), cb.capture(), meq(null))) thenReturn {
+    when(zk.exists(meq(path), meq(false), cb.capture(), meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       stat onSuccess {
         cbValue.processResult(0, path, null, _)
@@ -82,7 +87,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
     val watcher = ArgumentCaptor.forClass(classOf[Watcher])
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.StatCallback])
     when(zk.exists(meq(path), watcher.capture(), cb.capture(),
-        meq(null))) thenReturn {
+        meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       stat onSuccess {
         cbValue.processResult(0, path, null, _)
@@ -98,7 +103,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.Children2Callback])
     when(zk.getChildren(meq(path),
         meq(false), cb.capture(),
-        meq(null))) thenReturn {
+        meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       children onSuccess { znode =>
         cbValue.processResult(0, path, null, znode.children.map { _.name }.toList.asJava, znode.stat)
@@ -115,7 +120,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
     val w = ArgumentCaptor.forClass(classOf[Watcher])
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.Children2Callback])
     when(zk.getChildren(meq(path), w.capture(), cb.capture(),
-        meq(null))) thenReturn {
+        meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       children onSuccess { case ZNode.Children(znode, stat, children) =>
         cbValue.processResult(0, path, null, children.map { _.name }.toList.asJava, stat)
@@ -129,7 +134,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
 
   def getData(path: String)(result: => Future[ZNode.Data]) {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.DataCallback])
-    when(zk.getData(meq(path), meq(false), cb.capture(), meq(null))) thenReturn {
+    when(zk.getData(meq(path), meq(false), cb.capture(), meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       result onSuccess { z =>
         cbValue.processResult(0, path, null, z.bytes, z.stat)
@@ -144,7 +149,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.DataCallback])
     when(zk.getData(meq(path),
         w.capture(), cb.capture(),
-        meq(null))) thenReturn {
+        meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       result onSuccess { z =>
         cbValue.processResult(0, path, null, z.bytes, z.stat)
@@ -160,7 +165,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
              (wait: => Future[Stat]) {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.StatCallback])
     when(zk.setData(meq(path), meq(data), meq(version),
-        cb.capture(), meq(null))) thenReturn {
+        cb.capture(), meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       wait onSuccess { stat =>
         cbValue.processResult(0, path, null, stat)
@@ -174,7 +179,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
   def sync(path: String)
           (wait: Future[Unit]) {
     val cb = ArgumentCaptor.forClass(classOf[AsyncCallback.VoidCallback])
-    when(zk.sync(meq(path), cb.capture(), meq(null))) thenReturn {
+    when(zk.sync(meq(path), cb.capture(), meq(null))) thenAnswer answer {
       val cbValue = cb.getValue
       wait onSuccess { _ =>
         cbValue.processResult(0, path, null)
@@ -303,6 +308,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         create(path, data)(Future(path))
         assert(Await.result(zkClient(path).create(data)) match {
           case ZNode(p) => p == path
+          case _        => false
         })
       }
 
@@ -368,6 +374,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
         delete(path, version)(Future.Done)
         assert(Await.result(zkClient(path).delete(version)) match { 
           case ZNode(p) => p == path
+          case _        => false
         })
       }
 
@@ -684,7 +691,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "set data" in {
+    "set data" should {
       val znode = zkClient("/empty/node")
       val result = ZNode.Exists(znode, new Stat)
       val data = "word to your mother.".getBytes
@@ -704,7 +711,7 @@ class ZkClientSpec extends WordSpec with Matchers with MockitoSugar {
       }
     }
 
-    "sync" in {
+    "sync" should {
       val znode = zkClient("/sync")
 
       "ok" in {
