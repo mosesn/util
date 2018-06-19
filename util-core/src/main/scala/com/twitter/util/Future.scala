@@ -1072,7 +1072,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
       extends Promise[Seq[A]]
       with Promise.InterruptHandler {
 
-    private[this] val results = new mutable.ArraySeq[A](fs.size)
+    private[this] val results = new mutable.ArrayBuffer[A](fs.size)
     private[this] val count = new AtomicInteger(results.size)
 
     // Respond handler. It's safe to write into different array cells concurrently.
@@ -1082,7 +1082,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
     def collectTo(index: Int): Try[A] => Unit = {
       case Return(a) =>
         results(index) = a
-        if (count.decrementAndGet() == 0) setValue(results)
+        if (count.decrementAndGet() == 0) setValue(results.toSeq)
       case t @ Throw(_) =>
         updateIfEmpty(t.cast[Seq[A]])
     }
@@ -1136,7 +1136,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
     else {
       val (keys, values) = fs.toSeq.unzip
       Future.collect(values).map { seq =>
-        keys.zip(seq)(scala.collection.breakOut): Map[A, B]
+        keys.view.zip(seq).to(Map)
       }
     }
 
@@ -1166,7 +1166,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
       val seq = new mutable.ArrayBuffer[Future[Try[A]]](fs.size)
       val iterator = fs.iterator
       while (iterator.hasNext) seq += iterator.next().liftToTry
-      seq
+      seq.toSeq
     }
 
   /**
@@ -1224,7 +1224,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
               }
               seq
             }
-            p.updateIfEmpty(Return(t -> filtered))
+            p.updateIfEmpty(Return(t -> filtered.toSeq))
 
             var j = 0
             while (j < size) {
@@ -1357,7 +1357,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
       result += f
       i += 1
     }
-    result
+    result.toSeq
   }
 
   /**

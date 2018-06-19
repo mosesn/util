@@ -12,7 +12,6 @@ class BoundedStack[A: ClassTag](val maxSize: Int) extends Seq[A] {
   private var count_ = 0
 
   def length = count_
-  override def size = count_
 
   def clear(): Unit = {
     top = 0

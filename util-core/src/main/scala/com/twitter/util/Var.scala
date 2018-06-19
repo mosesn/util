@@ -4,8 +4,7 @@ import java.util.concurrent.atomic.{AtomicLong, AtomicReference, AtomicReference
 import java.util.{List => JList}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import scala.collection.generic.CanBuildFrom
-import scala.collection.immutable
+import scala.collection.{immutable, BuildFrom}
 import scala.collection.mutable.Buffer
 import scala.language.higherKinds
 import scala.reflect.ClassTag
@@ -263,7 +262,7 @@ object Var {
    */
   def collect[T: ClassTag, CC[X] <: Traversable[X]](
     vars: CC[Var[T]]
-  )(implicit newBuilder: CanBuildFrom[CC[T], T, CC[T]]): Var[CC[T]] = {
+  )(implicit buildFrom: BuildFrom[CC[Var[T]], T, CC[T]]): Var[CC[T]] = {
     val vs = vars.toArray
 
     def tree(begin: Int, end: Int): Var[Seq[T]] =
@@ -279,7 +278,7 @@ object Var {
       }
 
     tree(0, vs.length).map { ts =>
-      val b = newBuilder()
+      val b = buildFrom.newBuilder(vars)
       b ++= ts
       b.result()
     }
@@ -310,14 +309,14 @@ object Var {
   def collectIndependent[T: ClassTag, CC[X] <: Traversable[X]](
     vars: CC[Var[T]]
   )(
-    implicit newBuilder: CanBuildFrom[CC[T], T, CC[T]]
+    implicit buildFrom: BuildFrom[CC[Var[T]], T, CC[T]]
   ): Var[CC[T]] =
-    async(newBuilder().result()) { v =>
+    async(buildFrom.newBuilder(vars).result()) { v =>
       val N = vars.size
       val cur = new AtomicReferenceArray[T](N)
       @volatile var filling = true
       def build() = {
-        val b = newBuilder()
+        val b = buildFrom.newBuilder(vars)
         var i = 0
         while (i < N) {
           b += cur.get(i)

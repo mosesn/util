@@ -1,6 +1,8 @@
 package com.twitter.util;
 
-import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
+import scala.collection.immutable.Seq;
+import scala.collection.immutable.Seq$;
 import scala.runtime.BoxedUnit;
 
 import java.util.Arrays;
@@ -44,7 +46,7 @@ public final class Closables {
    */
   public static Closable all(Closable... closables) {
     return Closable$.MODULE$.all(
-      JavaConversions.asScalaBuffer(Arrays.asList(closables))
+      JavaConverters.asScalaBuffer(Arrays.asList(closables)).iterator().toSeq()
     );
   }
 
@@ -53,7 +55,7 @@ public final class Closables {
    */
   public static Closable sequence(Closable... closables) {
     return Closable$.MODULE$.sequence(
-      JavaConversions.asScalaBuffer(Arrays.asList(closables))
+      JavaConverters.asScalaBuffer(Arrays.asList(closables)).iterator().toSeq()
     );
   }
 

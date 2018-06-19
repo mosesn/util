@@ -765,7 +765,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
    * @param fs a java.util.List of Futures
    * @return a Future[Unit] whose value is populated when all of the fs return.
    */
-  def join[A](fs: JList[Future[A]]): Future[Unit] = Future.join(fs.asScala)
+  def join[A](fs: JList[Future[A]]): Future[Unit] = Future.join(fs.asScala.toSeq)
 
   /**
    * "Select" off the first future to be satisfied.  Return this as a
@@ -776,7 +776,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
    * to be satisfied and the rest of the futures.
    */
   def select[A](fs: JList[Future[A]]): Future[(Try[A], JList[Future[A]])] =
-    Future.select(fs.asScala).map {
+    Future.select(fs.asScala.toSeq).map {
       case (first, rest) =>
         (first, rest.asJava)
     }
@@ -790,7 +790,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
    * @return a `Future[java.util.List[A]]` containing the collected values from fs.
    */
   def collect[A](fs: JList[Future[A]]): Future[JList[A]] =
-    Future.collect(fs.asScala).map { _.asJava }
+    Future.collect(fs.asScala.toSeq).map { _.asJava }
 
   /**
    * Collect the results from the given map `fs` of futures into a new future
@@ -807,7 +807,7 @@ def join[%s](%s): Future[(%s)] = join(Seq(%s)).map { _ => (%s) }""".format(
    * @return a `Future[java.util.List[Try[A]]]` containing the collected values from fs.
    */
   def collectToTry[A](fs: JList[Future[A]]): Future[JList[Try[A]]] =
-    Future.collectToTry(fs.asScala).map { _.asJava }
+    Future.collectToTry(fs.asScala.toSeq).map { _.asJava }
 
   /**
    * Flattens a nested future.  Same as ffa.flatten, but easier to call from Java.
